@@ -1003,36 +1003,6 @@ export function createServer() {
     upload.array("images", 10),
     adminCreateProperty,
   );
-  app.get(
-    "/api/admin/categories",
-    authenticateToken,
-    requireAdmin,
-    getAdminCategories,
-  );
-  app.post(
-    "/api/admin/categories",
-    authenticateToken,
-    requireAdmin,
-    createCategory,
-  );
-  app.put(
-    "/api/admin/categories/:categoryId",
-    authenticateToken,
-    requireAdmin,
-    updateCategory,
-  );
-  app.delete(
-    "/api/admin/categories/:categoryId",
-    authenticateToken,
-    requireAdmin,
-    deleteCategory,
-  );
-  app.post(
-    "/api/admin/categories/upload-icon",
-    authenticateToken,
-    requireAdmin,
-    uploadCategoryIcon,
-  );
   app.put(
     "/api/admin/properties/:propertyId",
     authenticateToken,
