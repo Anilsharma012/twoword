@@ -1053,7 +1053,7 @@ export default function Admin() {
         case "user-reports":
           return <ReportsManagement />;
         case "categories":
-          return <CompleteCategoryManagement />;
+          return <EnhancedCategoryManagement />;
         case "custom-fields":
           return <CustomFieldsManagement />;
         case "ad-management":
