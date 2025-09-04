@@ -593,7 +593,7 @@ export default function EnhancedCategoryManagement() {
                   <TableCell>
                     <div className="flex items-center space-x-1">
                       <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
-                        {category.order}
+                        {category.order ?? 0}
                       </span>
                       <div className="flex flex-col">
                         <Button
