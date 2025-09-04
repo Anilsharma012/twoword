@@ -413,6 +413,103 @@ export default function CategoryManagement() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Category</DialogTitle>
+            </DialogHeader>
+            {editingCategory ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Category Name</label>
+                  <Input
+                    value={editingCategory.name}
+                    onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                    placeholder="Enter category name..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Slug</label>
+                  <Input
+                    value={editingCategory.slug}
+                    onChange={(e) => setEditingCategory({ ...editingCategory, slug: e.target.value })}
+                    placeholder="category-slug"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Description</label>
+                  <Textarea
+                    value={editingCategory.description}
+                    onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
+                    placeholder="Enter category description..."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Icon</label>
+                  <Input
+                    value={editingCategory.icon}
+                    onChange={(e) => setEditingCategory({ ...editingCategory, icon: e.target.value })}
+                    placeholder="Icon name (e.g., Home, Building, etc.)"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button variant="outline" onClick={() => { setEditingCategory(null); setIsEditDialogOpen(false); }}>
+                    Cancel
+                  </Button>
+                  <Button onClick={updateCategory} className="bg-[#C70000] hover:bg-[#A60000]">
+                    Save Changes
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">No category selected</div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* View Dialog */}
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>View Category</DialogTitle>
+            </DialogHeader>
+            {viewCategory ? (
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold">{viewCategory.name}</h4>
+                  <p className="text-sm text-gray-600">{viewCategory.description}</p>
+                  <code className="text-xs bg-gray-100 px-1 rounded">{viewCategory.slug}</code>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Subcategories</p>
+                  <div className="space-y-2 mt-2">
+                    {(viewCategory.subcategories || []).map((s, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div>{s.name}</div>
+                        <div className="text-xs text-gray-500">{s.count ?? 0}</div>
+                      </div>
+                    ))}
+                    {(viewCategory.subcategories || []).length === 0 && (
+                      <div className="text-sm text-gray-500">No subcategories</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={() => { setViewCategory(null); setIsViewDialogOpen(false); }}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">No category selected</div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats Cards */}
@@ -558,10 +655,10 @@ export default function CategoryManagement() {
                   <TableCell>{category.order ?? 0}</TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => { setViewCategory(category); setIsViewDialogOpen(true); }}>
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => { setEditingCategory(category); setIsEditDialogOpen(true); }}>
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
