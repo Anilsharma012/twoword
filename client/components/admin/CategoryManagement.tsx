@@ -409,7 +409,7 @@ export default function CategoryManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {categories.reduce((sum, cat) => sum + cat.count, 0)}
+              {categories.reduce((sum, cat) => sum + (cat.count || 0), 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Across all categories
@@ -424,7 +424,7 @@ export default function CategoryManagement() {
           <CardContent>
             <div className="text-2xl font-bold">
               {categories.reduce(
-                (sum, cat) => sum + cat.subcategories.length,
+                (sum, cat) => sum + (cat.subcategories ? cat.subcategories.length : 0),
                 0,
               )}
             </div>
@@ -481,7 +481,7 @@ export default function CategoryManagement() {
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      {category.subcategories.slice(0, 3).map((sub, index) => (
+                      {(category.subcategories || []).slice(0, 3).map((sub, index) => (
                         <Badge
                           key={index}
                           variant="outline"
@@ -490,15 +490,15 @@ export default function CategoryManagement() {
                           {sub.name} ({sub.count})
                         </Badge>
                       ))}
-                      {category.subcategories.length > 3 && (
+                      {(category.subcategories || []).length > 3 && (
                         <Badge variant="outline">
-                          +{category.subcategories.length - 3} more
+                          +{(category.subcategories || []).length - 3} more
                         </Badge>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="font-semibold">{category.count}</span>
+                    <span className="font-semibold">{category.count ?? 0}</span>
                   </TableCell>
                   <TableCell>
                     <Badge
@@ -512,7 +512,7 @@ export default function CategoryManagement() {
                       {category.active ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
-                  <TableCell>{category.order}</TableCell>
+                  <TableCell>{category.order ?? 0}</TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button size="sm" variant="outline">
