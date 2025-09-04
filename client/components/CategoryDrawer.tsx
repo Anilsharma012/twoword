@@ -57,31 +57,86 @@ const CategoryDrawer: React.FC<CategoryDrawerProps> = ({ isOpen, onClose }) => {
     try {
       setLoading(true);
 
-      // Fetch both property and service categories
-      const [propertyResponse, serviceResponse] = await Promise.all([
-        fetch("/api/categories?active=1&type=property"),
-        fetch("/api/categories?active=1&type=service"),
-      ]);
-
       const allCategories: Category[] = [];
 
-      if (propertyResponse.ok) {
-        const propertyData = await propertyResponse.json();
-        if (propertyData.success && propertyData.data) {
-          allCategories.push(...propertyData.data);
+      // Fetch property categories with subcategories (new API)
+      const propRes = await fetch("/api/categories?active=true&withSub=true");
+      if (propRes.ok) {
+        const propJson = await propRes.json();
+        if (propJson.success && Array.isArray(propJson.data)) {
+          const mappedProps: Category[] = propJson.data.map((c: any) => ({
+            _id: c._id,
+            name: c.name,
+            slug: c.slug,
+            type: "property",
+            icon: c.iconUrl || "",
+            description: c.description || "",
+            order: c.sortOrder ?? 999,
+            active: !!c.isActive,
+            subcategories: Array.isArray(c.subcategories)
+              ? c.subcategories.map((s: any) => ({
+                  _id: s._id,
+                  name: s.name,
+                  slug: s.slug,
+                  categoryId: s.categoryId,
+                  active: !!s.isActive,
+                  order: s.sortOrder ?? 999,
+                }))
+              : [],
+          }));
+          allCategories.push(...mappedProps);
         }
       }
 
-      if (serviceResponse.ok) {
-        const serviceData = await serviceResponse.json();
-        if (serviceData.success && serviceData.data) {
-          allCategories.push(...serviceData.data);
+      // Fetch service categories (Other Services) and their subcategories
+      const osCatsRes = await fetch("/api/os/categories?active=1");
+      if (osCatsRes.ok) {
+        const osCatsJson = await osCatsRes.json();
+        if (osCatsJson.success && Array.isArray(osCatsJson.data)) {
+          const osCategories = osCatsJson.data as any[];
+          // Load subcategories per OS category
+          const osWithSubs = await Promise.all(
+            osCategories.map(async (cat: any, idx: number) => {
+              let subcats: any[] = [];
+              try {
+                const subsRes = await fetch(
+                  `/api/os/subcategories?active=1&cat=${encodeURIComponent(cat.slug)}`,
+                );
+                if (subsRes.ok) {
+                  const subsJson = await subsRes.json();
+                  if (subsJson.success && Array.isArray(subsJson.data)) {
+                    subcats = subsJson.data;
+                  }
+                }
+              } catch {}
+              const mapped: Category = {
+                _id: cat._id || cat.slug,
+                name: cat.name,
+                slug: cat.slug,
+                type: "service",
+                icon: "🔧",
+                description: "",
+                order: (idx + 1) * 1000, // place services after properties
+                active: !!cat.active,
+                subcategories: subcats.map((s: any, i: number) => ({
+                  _id: s._id || s.slug,
+                  name: s.name,
+                  slug: s.slug,
+                  active: !!s.active,
+                  order: (i + 1) * 10,
+                })),
+              };
+              return mapped;
+            }),
+          );
+          allCategories.push(...osWithSubs);
         }
       }
 
-      // Sort by order and then by name
+      // Sort by order then by name
       allCategories.sort((a, b) => {
-        if (a.order !== b.order) return a.order - b.order;
+        if ((a.order ?? 999) !== (b.order ?? 999))
+          return (a.order ?? 999) - (b.order ?? 999);
         return a.name.localeCompare(b.name);
       });
 
