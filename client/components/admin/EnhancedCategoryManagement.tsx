@@ -463,7 +463,7 @@ export default function EnhancedCategoryManagement() {
           <CardContent>
             <div className="text-2xl font-bold">
               {categories.reduce(
-                (sum, cat) => sum + cat.subcategories.length,
+                (sum, cat) => sum + (cat.subcategories ? cat.subcategories.length : 0),
                 0,
               )}
             </div>
