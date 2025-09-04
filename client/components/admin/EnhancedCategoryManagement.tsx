@@ -178,13 +178,12 @@ export default function EnhancedCategoryManagement() {
         }),
       );
 
-      const categoryData = {
-        ...newCategory,
-        icon: iconUrl,
-        subcategories: processedSubcategories,
+      const categoryPayload = {
+        name: newCategory.name,
+        iconUrl: iconUrl || "/placeholder.svg",
+        sortOrder: newCategory.order ?? 999,
+        isActive: newCategory.active ?? true,
       };
-
-      delete (categoryData as any).iconFile;
 
       const response = await fetch("/api/admin/categories", {
         method: "POST",
@@ -192,21 +191,57 @@ export default function EnhancedCategoryManagement() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(categoryData),
+        body: JSON.stringify(categoryPayload),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          fetchCategories();
-          resetForm();
-          setIsCreateDialogOpen(false);
-        } else {
-          setError(data.error || "Failed to create category");
-        }
-      } else {
-        setError("Failed to create category");
+      // If created, create subcategories separately
+
+      if (!response.ok) {
+        const text = await response.text();
+        let err = "Failed to create category";
+        try { err = JSON.parse(text).error || err; } catch (e) {}
+        setError(err);
+        setUploading(false);
+        return;
       }
+
+      const data = await response.json();
+      if (!data.success) {
+        setError(data.error || "Failed to create category");
+        setUploading(false);
+        return;
+      }
+
+      const createdCategory = data.data?.category || { _id: data.data?._id };
+      const categoryId = createdCategory._id;
+
+      // create subcategories via API
+      for (let i = 0; i < processedSubcategories.length; i++) {
+        const sub = processedSubcategories[i];
+        try {
+          await fetch("/api/admin/subcategories", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              categoryId,
+              name: sub.name,
+              iconUrl: iconUrl || "/placeholder.svg",
+              sortOrder: i + 1,
+              isActive: true,
+            }),
+          });
+        } catch (e) {
+          console.warn("Failed to create subcategory", sub, e);
+        }
+      }
+
+      fetchCategories();
+      resetForm();
+      setIsCreateDialogOpen(false);
+      setUploading(false);
     } catch (error) {
       console.error("Error creating category:", error);
       setError("Failed to create category");
