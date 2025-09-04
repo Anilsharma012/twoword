@@ -266,6 +266,9 @@ export const getAllCategories: RequestHandler = async (req, res) => {
         return {
           ...category,
           subcategories: subcategories || [],
+          // Backwards-compatible counts used by various admin components
+          subcategoryCount: subcategoryCount,
+          propertiesCount: propertiesCount,
           counts: {
             subcategories: subcategoryCount,
             properties: propertiesCount,
