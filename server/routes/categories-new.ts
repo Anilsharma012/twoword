@@ -206,7 +206,7 @@ export const getSubcategoriesByCategory: RequestHandler = async (req, res) => {
 export const getAllCategories: RequestHandler = async (req, res) => {
   try {
     const db = getDatabase();
-    const { search = "", page = "1", limit = "10" } = req.query;
+    const { search = "", page = "1", limit = "10", withSub = "false" } = req.query;
 
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
