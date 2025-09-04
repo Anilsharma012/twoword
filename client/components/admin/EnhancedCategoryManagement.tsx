@@ -568,7 +568,7 @@ export default function EnhancedCategoryManagement() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="font-semibold">{category.count}</span>
+                    <span className="font-semibold">{category.count ?? 0}</span>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
