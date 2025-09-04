@@ -98,36 +98,76 @@ export default function CategoryManagement() {
   };
 
   const createCategory = async () => {
-    if (!token || !newCategory.name || !newCategory.slug) return;
+    if (!token || !newCategory.name) return;
 
     try {
+      const payload = {
+        name: newCategory.name,
+        iconUrl: newCategory.icon || "/placeholder.svg",
+        sortOrder: 999,
+        isActive: true,
+      };
+
       const response = await fetch("/api/admin/categories", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(newCategory),
+        body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          fetchCategories(); // Refresh the list
-          setNewCategory({
-            name: "",
-            slug: "",
-            description: "",
-            icon: "",
-            subcategories: [],
-          });
-          setIsCreateDialogOpen(false);
-        } else {
-          setError(data.error || "Failed to create category");
-        }
-      } else {
-        setError("Failed to create category");
+      if (!response.ok) {
+        const text = await response.text();
+        let err = "Failed to create category";
+        try { err = JSON.parse(text).error || err; } catch (e) {}
+        setError(err);
+        return;
       }
+
+      const data = await response.json();
+      if (!data.success) {
+        setError(data.error || "Failed to create category");
+        return;
+      }
+
+      // Category created; now create subcategories (if any) using dedicated endpoint
+      const createdCategory = data.data?.category || { _id: data.data?._id };
+      const categoryId = createdCategory._id;
+
+      for (let i = 0; i < newCategory.subcategories.length; i++) {
+        const sub = newCategory.subcategories[i];
+        if (!sub || !sub.name) continue;
+        try {
+          await fetch("/api/admin/subcategories", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              categoryId,
+              name: sub.name,
+              iconUrl: newCategory.icon || "/placeholder.svg",
+              sortOrder: i + 1,
+              isActive: true,
+            }),
+          });
+        } catch (e) {
+          console.warn("Failed to create subcategory", sub, e);
+        }
+      }
+
+      // Refresh and reset form
+      fetchCategories(); // Refresh the list
+      setNewCategory({
+        name: "",
+        slug: "",
+        description: "",
+        icon: "",
+        subcategories: [],
+      });
+      setIsCreateDialogOpen(false);
     } catch (error) {
       console.error("Error creating category:", error);
       setError("Failed to create category");
@@ -138,32 +178,37 @@ export default function CategoryManagement() {
     if (!token || !editingCategory) return;
 
     try {
+      const payload: any = {
+        name: editingCategory.name,
+        iconUrl: (editingCategory as any).icon || editingCategory.iconUrl || "/placeholder.svg",
+        sortOrder: (editingCategory as any).order ?? (editingCategory as any).sortOrder ?? 999,
+        isActive: (editingCategory as any).active ?? true,
+      };
+
       const response = await fetch(`/api/admin/categories/${editingCategory._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          name: editingCategory.name,
-          slug: editingCategory.slug,
-          description: editingCategory.description,
-          icon: editingCategory.icon,
-          subcategories: editingCategory.subcategories,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          fetchCategories();
-          setEditingCategory(null);
-          setIsEditDialogOpen(false);
-        } else {
-          setError(data.error || "Failed to update category");
-        }
+      if (!response.ok) {
+        const text = await response.text();
+        let err = "Failed to update category";
+        try { err = JSON.parse(text).error || err; } catch (e) {}
+        setError(err);
+        return;
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        fetchCategories();
+        setEditingCategory(null);
+        setIsEditDialogOpen(false);
       } else {
-        setError("Failed to update category");
+        setError(data.error || "Failed to update category");
       }
     } catch (error) {
       console.error("Error updating category:", error);
