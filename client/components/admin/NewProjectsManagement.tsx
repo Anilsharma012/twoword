@@ -326,6 +326,8 @@ export default function NewProjectsManagement() {
           description: "Project created successfully",
         });
         fetchProjects();
+        // Notify public pages to refresh
+        try { window.dispatchEvent(new Event('newProjectsUpdated')); } catch(e) {}
         resetProjectForm();
         setShowProjectDialog(false);
       } else {
