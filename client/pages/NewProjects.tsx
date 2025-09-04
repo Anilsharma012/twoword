@@ -1,4 +1,3 @@
-import Header from "../components/Header";
 import React, { useEffect, useState, useCallback } from "react";
 import Header from "../components/Header";
 import BottomNavigation from "../components/BottomNavigation";
