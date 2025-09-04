@@ -53,6 +53,12 @@ export default function CategoryManagement() {
     subcategories: [] as { name: string; slug: string }[],
   });
 
+  // Edit / View state
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [viewCategory, setViewCategory] = useState<Category | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+
   useEffect(() => {
     fetchCategories();
   }, [token]);
@@ -125,6 +131,43 @@ export default function CategoryManagement() {
     } catch (error) {
       console.error("Error creating category:", error);
       setError("Failed to create category");
+    }
+  };
+
+  const updateCategory = async () => {
+    if (!token || !editingCategory) return;
+
+    try {
+      const response = await fetch(`/api/admin/categories/${editingCategory._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: editingCategory.name,
+          slug: editingCategory.slug,
+          description: editingCategory.description,
+          icon: editingCategory.icon,
+          subcategories: editingCategory.subcategories,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          fetchCategories();
+          setEditingCategory(null);
+          setIsEditDialogOpen(false);
+        } else {
+          setError(data.error || "Failed to update category");
+        }
+      } else {
+        setError("Failed to update category");
+      }
+    } catch (error) {
+      console.error("Error updating category:", error);
+      setError("Failed to update category");
     }
   };
 
