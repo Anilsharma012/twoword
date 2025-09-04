@@ -71,7 +71,12 @@ export default function CategoryManagement() {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setCategories(data.data);
+          const list: Category[] = Array.isArray(data.data)
+            ? data.data
+            : Array.isArray(data.data?.categories)
+              ? data.data.categories
+              : [];
+          setCategories(list);
         } else {
           setError(data.error || "Failed to fetch categories");
         }
