@@ -549,7 +549,7 @@ export default function EnhancedCategoryManagement() {
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      {category.subcategories
+                      {(category.subcategories || [])
                         .slice(0, 3)
                         .map((sub, subIndex) => (
                           <Badge
@@ -560,9 +560,9 @@ export default function EnhancedCategoryManagement() {
                             {sub.name} ({sub.count})
                           </Badge>
                         ))}
-                      {category.subcategories.length > 3 && (
+                      {(category.subcategories || []).length > 3 && (
                         <Badge variant="outline">
-                          +{category.subcategories.length - 3} more
+                          +{(category.subcategories || []).length - 3} more
                         </Badge>
                       )}
                     </div>
