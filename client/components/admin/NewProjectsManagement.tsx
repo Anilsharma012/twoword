@@ -326,6 +326,8 @@ export default function NewProjectsManagement() {
           description: "Project created successfully",
         });
         fetchProjects();
+        // Notify public pages to refresh
+        try { window.dispatchEvent(new Event('newProjectsUpdated')); } catch(e) {}
         resetProjectForm();
         setShowProjectDialog(false);
       } else {
@@ -369,10 +371,12 @@ export default function NewProjectsManagement() {
 
       if (data.success) {
         toast({
-          title: "Success",
-          description: "Banner created successfully",
+        title: "Success",
+        description: "Banner created successfully",
         });
         fetchBanners();
+        // Notify public pages to refresh banners immediately
+        try { window.dispatchEvent(new Event('newProjectsUpdated')); } catch(e) {}
         resetBannerForm();
         setShowBannerDialog(false);
       } else {

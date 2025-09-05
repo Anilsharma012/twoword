@@ -152,42 +152,24 @@ export default function CompleteCategoryManagement() {
   };
 
   const createCategory = async () => {
-    if (!token || !newCategory.name || !newCategory.slug) return;
+    if (!token || !newCategory.name) return;
 
     try {
       setUploading(true);
-      let iconUrl = newCategory.icon;
+      let iconUrl = (newCategory as any).icon || "";
 
       // Upload icon if file is selected
       if (newCategory.iconFile) {
         iconUrl = await uploadIcon(newCategory.iconFile);
       }
 
-      // Process subcategories with images
-      const processedSubcategories = await Promise.all(
-        newCategory.subcategories.map(async (sub) => {
-          let imageUrl = "";
-          if (sub.imageFile) {
-            // For now, use placeholder - implement actual upload
-            imageUrl = `/uploads/subcategories/${Date.now()}-${sub.imageFile.name}`;
-          }
-          return {
-            id: Math.random().toString(36).substr(2, 9),
-            name: sub.name,
-            slug: sub.slug,
-            description: sub.description,
-            image: imageUrl,
-          };
-        }),
-      );
-
-      const categoryData = {
-        ...newCategory,
-        icon: iconUrl,
-        subcategories: processedSubcategories,
+      // Prepare category payload matching server API
+      const payload = {
+        name: newCategory.name,
+        iconUrl: iconUrl || "/placeholder.svg",
+        sortOrder: newCategory.order ?? 999,
+        isActive: newCategory.active ?? true,
       };
-
-      delete (categoryData as any).iconFile;
 
       const response = await fetch("/api/admin/categories", {
         method: "POST",
@@ -195,21 +177,55 @@ export default function CompleteCategoryManagement() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(categoryData),
+        body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          fetchCategories();
-          resetForm();
-          setIsCreateDialogOpen(false);
-        } else {
-          setError(data.error || "Failed to create category");
-        }
-      } else {
-        setError("Failed to create category");
+      if (!response.ok) {
+        const text = await response.text();
+        let err = "Failed to create category";
+        try { err = JSON.parse(text).error || err; } catch (e) {}
+        setError(err);
+        setUploading(false);
+        return;
       }
+
+      const data = await response.json();
+      if (!data.success) {
+        setError(data.error || "Failed to create category");
+        setUploading(false);
+        return;
+      }
+
+      const createdCategoryId = data.data?.category?._id || data.data?._id;
+
+      // Create subcategories separately if provided
+      if (newCategory.subcategories && newCategory.subcategories.length && createdCategoryId) {
+        for (let i = 0; i < newCategory.subcategories.length; i++) {
+          const sub = newCategory.subcategories[i];
+          try {
+            await fetch("/api/admin/subcategories", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                categoryId: createdCategoryId,
+                name: sub.name,
+                iconUrl: iconUrl || "/placeholder.svg",
+                sortOrder: i + 1,
+                isActive: true,
+              }),
+            });
+          } catch (e) {
+            console.warn("Failed to create subcategory", sub, e);
+          }
+        }
+      }
+
+      fetchCategories();
+      resetForm();
+      setIsCreateDialogOpen(false);
     } catch (error) {
       console.error("Error creating category:", error);
       setError("Failed to create category");
@@ -225,13 +241,23 @@ export default function CompleteCategoryManagement() {
     if (!token) return;
 
     try {
+      const payload: any = { ...updates };
+      if ((payload as any).icon) {
+        payload.iconUrl = (payload as any).icon;
+        delete payload.icon;
+      }
+      if ((payload as any).order !== undefined) {
+        payload.sortOrder = (payload as any).order;
+        delete payload.order;
+      }
+
       const response = await fetch(`/api/admin/categories/${categoryId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(updates),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {

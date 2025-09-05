@@ -206,7 +206,7 @@ export const getSubcategoriesByCategory: RequestHandler = async (req, res) => {
 export const getAllCategories: RequestHandler = async (req, res) => {
   try {
     const db = getDatabase();
-    const { search = "", page = "1", limit = "10" } = req.query;
+    const { search = "", page = "1", limit = "10", withSub = "false" } = req.query;
 
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
@@ -232,16 +232,47 @@ export const getAllCategories: RequestHandler = async (req, res) => {
       db.collection("categories").countDocuments(filter),
     ]);
 
-    // Add subcategory counts
+    // For each category, compute counts and include subcategories array (if requested)
     const categoriesWithCounts = await Promise.all(
       categories.map(async (category: any) => {
-        const subcategoryCount = await db
-          .collection("subcategories")
-          .countDocuments({ categoryId: category._id.toString() });
+        // Ensure subcategories array exists
+        let subcategories: any[] = [];
+        if (withSub === "true") {
+          subcategories = await db
+            .collection("subcategories")
+            .find({ categoryId: category._id.toString() })
+            .sort({ sortOrder: 1, createdAt: 1 })
+            .toArray();
+        }
+
+        // Count subcategories
+        const subcategoryCount = Array.isArray(subcategories)
+          ? subcategories.length
+          : await db
+              .collection("subcategories")
+              .countDocuments({ categoryId: category._id.toString() });
+
+        // Count properties linked to this category
+        // Match by propertyType === category.slug OR subCategory in subcategory slugs
+        const subSlugs = (subcategories || []).map((s: any) => s.slug).filter(Boolean);
+        const propFilter: any = {
+          $or: [{ propertyType: category.slug }],
+        };
+        if (subSlugs.length > 0) {
+          propFilter.$or.push({ subCategory: { $in: subSlugs } });
+        }
+        const propertiesCount = await db.collection("properties").countDocuments(propFilter);
 
         return {
           ...category,
-          subcategoryCount,
+          subcategories: subcategories || [],
+          // Backwards-compatible counts used by various admin components
+          subcategoryCount: subcategoryCount,
+          propertiesCount: propertiesCount,
+          counts: {
+            subcategories: subcategoryCount,
+            properties: propertiesCount,
+          },
         };
       }),
     );

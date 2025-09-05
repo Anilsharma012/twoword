@@ -314,13 +314,16 @@ export default function Footer() {
       console.log("🔄 Starting bulletproof footer data fetch...");
 
       // Ultra-safe fetch with multiple layers of error protection
-      const bulletproofFetch = async (url: string, name: string) => {
-        return new Promise(async (resolve) => {
+      const bulletproofFetch = async (
+        url: string,
+        name: string,
+      ): Promise<any> => {
+        return new Promise<any>(async (resolve) => {
           try {
             // Check if fetch is even available
             if (!window.fetch) {
               console.warn(`❌ ${name}: fetch not available`);
-              resolve(null);
+              resolve(null as any);
               return;
             }
 
@@ -351,19 +354,19 @@ export default function Footer() {
                 try {
                   const data = await response.json();
                   console.log(`✅ ${name} loaded successfully`);
-                  resolve(data);
+                  resolve(data as any);
                 } catch (jsonError) {
                   console.warn(
                     `❌ ${name} JSON parse failed:`,
                     jsonError?.message || "Unknown JSON error",
                   );
-                  resolve(null);
+                  resolve(null as any);
                 }
               } else {
                 console.warn(
                   `⚠️ ${name} HTTP error: ${response?.status || "Unknown status"}`,
                 );
-                resolve(null);
+                resolve(null as any);
               }
             } catch (fetchError) {
               clearTimeout(timeoutId);
@@ -382,13 +385,13 @@ export default function Footer() {
                   `❌ ${name} fetch error: ${fetchError?.message || "Unknown fetch error"}`,
                 );
               }
-              resolve(null);
+              resolve(null as any);
             }
           } catch (unexpectedError) {
             console.warn(
               `💥 ${name} unexpected error: ${unexpectedError?.message || "Unknown error"}`,
             );
-            resolve(null);
+            resolve(null as any);
           }
         });
       };

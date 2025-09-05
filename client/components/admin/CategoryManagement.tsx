@@ -53,6 +53,12 @@ export default function CategoryManagement() {
     subcategories: [] as { name: string; slug: string }[],
   });
 
+  // Edit / View state
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [viewCategory, setViewCategory] = useState<Category | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+
   useEffect(() => {
     fetchCategories();
   }, [token]);
@@ -71,7 +77,12 @@ export default function CategoryManagement() {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setCategories(data.data);
+          const list: Category[] = Array.isArray(data.data)
+            ? data.data
+            : Array.isArray(data.data?.categories)
+              ? data.data.categories
+              : [];
+          setCategories(list);
         } else {
           setError(data.error || "Failed to fetch categories");
         }
@@ -87,39 +98,121 @@ export default function CategoryManagement() {
   };
 
   const createCategory = async () => {
-    if (!token || !newCategory.name || !newCategory.slug) return;
+    if (!token || !newCategory.name) return;
 
     try {
+      const payload = {
+        name: newCategory.name,
+        iconUrl: newCategory.icon || "/placeholder.svg",
+        sortOrder: 999,
+        isActive: true,
+      };
+
       const response = await fetch("/api/admin/categories", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(newCategory),
+        body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          fetchCategories(); // Refresh the list
-          setNewCategory({
-            name: "",
-            slug: "",
-            description: "",
-            icon: "",
-            subcategories: [],
-          });
-          setIsCreateDialogOpen(false);
-        } else {
-          setError(data.error || "Failed to create category");
-        }
-      } else {
-        setError("Failed to create category");
+      if (!response.ok) {
+        const text = await response.text();
+        let err = "Failed to create category";
+        try { err = JSON.parse(text).error || err; } catch (e) {}
+        setError(err);
+        return;
       }
+
+      const data = await response.json();
+      if (!data.success) {
+        setError(data.error || "Failed to create category");
+        return;
+      }
+
+      // Category created; now create subcategories (if any) using dedicated endpoint
+      const createdCategory = data.data?.category || { _id: data.data?._id };
+      const categoryId = createdCategory._id;
+
+      for (let i = 0; i < newCategory.subcategories.length; i++) {
+        const sub = newCategory.subcategories[i];
+        if (!sub || !sub.name) continue;
+        try {
+          await fetch("/api/admin/subcategories", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              categoryId,
+              name: sub.name,
+              iconUrl: newCategory.icon || "/placeholder.svg",
+              sortOrder: i + 1,
+              isActive: true,
+            }),
+          });
+        } catch (e) {
+          console.warn("Failed to create subcategory", sub, e);
+        }
+      }
+
+      // Refresh and reset form
+      fetchCategories(); // Refresh the list
+      setNewCategory({
+        name: "",
+        slug: "",
+        description: "",
+        icon: "",
+        subcategories: [],
+      });
+      setIsCreateDialogOpen(false);
     } catch (error) {
       console.error("Error creating category:", error);
       setError("Failed to create category");
+    }
+  };
+
+  const updateCategory = async () => {
+    if (!token || !editingCategory) return;
+
+    try {
+      const payload: any = {
+        name: editingCategory.name,
+        iconUrl: (editingCategory as any).icon || editingCategory.iconUrl || "/placeholder.svg",
+        sortOrder: (editingCategory as any).order ?? (editingCategory as any).sortOrder ?? 999,
+        isActive: (editingCategory as any).active ?? true,
+      };
+
+      const response = await fetch(`/api/admin/categories/${editingCategory._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        let err = "Failed to update category";
+        try { err = JSON.parse(text).error || err; } catch (e) {}
+        setError(err);
+        return;
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        fetchCategories();
+        setEditingCategory(null);
+        setIsEditDialogOpen(false);
+      } else {
+        setError(data.error || "Failed to update category");
+      }
+    } catch (error) {
+      console.error("Error updating category:", error);
+      setError("Failed to update category");
     }
   };
 
@@ -365,6 +458,103 @@ export default function CategoryManagement() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Category</DialogTitle>
+            </DialogHeader>
+            {editingCategory ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Category Name</label>
+                  <Input
+                    value={editingCategory.name}
+                    onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                    placeholder="Enter category name..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Slug</label>
+                  <Input
+                    value={editingCategory.slug}
+                    onChange={(e) => setEditingCategory({ ...editingCategory, slug: e.target.value })}
+                    placeholder="category-slug"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Description</label>
+                  <Textarea
+                    value={editingCategory.description}
+                    onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
+                    placeholder="Enter category description..."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Icon</label>
+                  <Input
+                    value={editingCategory.icon}
+                    onChange={(e) => setEditingCategory({ ...editingCategory, icon: e.target.value })}
+                    placeholder="Icon name (e.g., Home, Building, etc.)"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button variant="outline" onClick={() => { setEditingCategory(null); setIsEditDialogOpen(false); }}>
+                    Cancel
+                  </Button>
+                  <Button onClick={updateCategory} className="bg-[#C70000] hover:bg-[#A60000]">
+                    Save Changes
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">No category selected</div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* View Dialog */}
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>View Category</DialogTitle>
+            </DialogHeader>
+            {viewCategory ? (
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold">{viewCategory.name}</h4>
+                  <p className="text-sm text-gray-600">{viewCategory.description}</p>
+                  <code className="text-xs bg-gray-100 px-1 rounded">{viewCategory.slug}</code>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Subcategories</p>
+                  <div className="space-y-2 mt-2">
+                    {(viewCategory.subcategories || []).map((s, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div>{s.name}</div>
+                        <div className="text-xs text-gray-500">{s.count ?? 0}</div>
+                      </div>
+                    ))}
+                    {(viewCategory.subcategories || []).length === 0 && (
+                      <div className="text-sm text-gray-500">No subcategories</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={() => { setViewCategory(null); setIsViewDialogOpen(false); }}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">No category selected</div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats Cards */}
@@ -404,7 +594,7 @@ export default function CategoryManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {categories.reduce((sum, cat) => sum + cat.count, 0)}
+              {categories.reduce((sum, cat) => sum + (cat.count || 0), 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Across all categories
@@ -419,7 +609,7 @@ export default function CategoryManagement() {
           <CardContent>
             <div className="text-2xl font-bold">
               {categories.reduce(
-                (sum, cat) => sum + cat.subcategories.length,
+                (sum, cat) => sum + (cat.subcategories ? cat.subcategories.length : 0),
                 0,
               )}
             </div>
@@ -476,7 +666,7 @@ export default function CategoryManagement() {
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      {category.subcategories.slice(0, 3).map((sub, index) => (
+                      {(category.subcategories || []).slice(0, 3).map((sub, index) => (
                         <Badge
                           key={index}
                           variant="outline"
@@ -485,15 +675,15 @@ export default function CategoryManagement() {
                           {sub.name} ({sub.count})
                         </Badge>
                       ))}
-                      {category.subcategories.length > 3 && (
+                      {(category.subcategories || []).length > 3 && (
                         <Badge variant="outline">
-                          +{category.subcategories.length - 3} more
+                          +{(category.subcategories || []).length - 3} more
                         </Badge>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="font-semibold">{category.count}</span>
+                    <span className="font-semibold">{category.count ?? 0}</span>
                   </TableCell>
                   <TableCell>
                     <Badge
@@ -507,13 +697,13 @@ export default function CategoryManagement() {
                       {category.active ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
-                  <TableCell>{category.order}</TableCell>
+                  <TableCell>{category.order ?? 0}</TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => { setViewCategory(category); setIsViewDialogOpen(true); }}>
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => { setEditingCategory(category); setIsEditDialogOpen(true); }}>
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button

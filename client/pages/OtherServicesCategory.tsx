@@ -176,7 +176,7 @@ export default function OtherServicesCategory() {
               Rohtak.
             </p>
             <Button
-              onClick={() => (window.location.href = "/contact")}
+              onClick={() => (window.location.href = "/contact-us")}
               className="bg-white text-[#C70000] hover:bg-gray-100 px-8 py-3 text-lg font-semibold"
             >
               Contact Us for Help

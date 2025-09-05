@@ -253,7 +253,7 @@ export default function OtherServicesListings() {
               Join our platform and get more customers in Rohtak.
             </p>
             <Button
-              onClick={() => (window.location.href = "/contact")}
+              onClick={() => (window.location.href = "/contact-us")}
               className="bg-white text-[#C70000] hover:bg-gray-100 px-8 py-3 text-lg font-semibold"
             >
               List Your Business

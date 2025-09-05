@@ -69,17 +69,23 @@ export default function ServiceCategories() {
         : "/api/admin/categories";
       const method = editingCategory ? "PUT" : "POST";
 
+      const payload: any = {
+        name: formData.name,
+        iconUrl: formData.icon || "/placeholder.svg",
+        sortOrder: (formData as any).order ?? 999,
+        isActive: (formData as any).active ?? true,
+        type: "service",
+      };
+      // include subcategories only when updating
+      if (editingCategory) payload.subcategories = editingCategory.subcategories || [];
+
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          ...formData,
-          type: "service",
-          subcategories: editingCategory?.subcategories || [],
-        }),
+        body: JSON.stringify(payload),
       });
 
       const { ok, status, data } = await safeReadResponse(response);
