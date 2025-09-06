@@ -260,7 +260,19 @@ export default function EnhancedCategoryManagement() {
   };
 
   const toggleCategoryStatus = async (categoryId: string, active: boolean) => {
-    await updateCategory(categoryId, { active });
+    // Optimistic update with rollback on failure
+    const prev = [...categories];
+    setCategories((cs) => cs.map((c) => (c._id === categoryId ? { ...c, active } : c)));
+    try {
+      const res = await api.put(`admin/categories/${categoryId}`, { active }, token);
+      if (!res?.data?.success) {
+        setCategories(prev);
+        throw new Error(res?.data?.error || "Failed to update status");
+      }
+    } catch (e: any) {
+      setCategories(prev);
+      console.error("Toggle status failed:", e?.message || e);
+    }
   };
 
   const updateCategoryOrder = async (
@@ -416,6 +428,7 @@ export default function EnhancedCategoryManagement() {
         <Button
           onClick={() => setIsCreateDialogOpen(true)}
           className="bg-[#C70000] hover:bg-[#A60000]"
+          aria-label="Add Category"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Category
@@ -504,7 +517,7 @@ export default function EnhancedCategoryManagement() {
             <SelectItem value="inactive">Inactive Only</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant="outline">
+        <Button variant="outline" aria-label="Search categories">
           <Search className="h-4 w-4 mr-2" />
           Search
         </Button>
@@ -615,6 +628,7 @@ export default function EnhancedCategoryManagement() {
                           }
                           disabled={index === 0}
                           className="h-6 w-6 p-0"
+                          aria-label="Move category up"
                         >
                           <ChevronUp className="h-3 w-3" />
                         </Button>
@@ -626,6 +640,7 @@ export default function EnhancedCategoryManagement() {
                           }
                           disabled={index === filteredCategories.length - 1}
                           className="h-6 w-6 p-0"
+                          aria-label="Move category down"
                         >
                           <ChevronDown className="h-3 w-3" />
                         </Button>
@@ -641,14 +656,20 @@ export default function EnhancedCategoryManagement() {
                           setEditingCategory(category);
                           setIsCreateDialogOpen(true);
                         }}
+                        aria-label="Edit category"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => deleteCategory(category._id)}
+                        onClick={() => {
+                          if (window.confirm("Delete this category? This cannot be undone.")) {
+                            deleteCategory(category._id);
+                          }
+                        }}
                         className="text-red-600 hover:text-red-700"
+                        aria-label="Delete category"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

@@ -43,6 +43,8 @@ import BuyerDashboard from "./pages/BuyerDashboard";
 import AgentDashboard from "./pages/AgentDashboard";
 import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
+import CategoriesPage from "./pages/CategoriesPage";
+import CountriesPage from "./pages/CountriesPage";
 import CategoryProperties from "./pages/CategoryProperties";
 import PropertyTypes from "./pages/PropertyTypes";
 import PropertyDetail from "./pages/PropertyDetail";
@@ -172,6 +174,8 @@ function App() {
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/admin/support" element={<Admin />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/admin/ads/categories" element={<CategoriesPage />} />
+                  <Route path="/admin/locations/countries" element={<CountriesPage />} />
                   <Route path="/staff/login" element={<StaffLogin />} />
                   <Route path="/staff-dashboard" element={<StaffDashboard />} />
                   <Route path="/staff-admin" element={<StaffAdmin />} />
