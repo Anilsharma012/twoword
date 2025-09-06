@@ -146,6 +146,23 @@ export default function CategoryProperties() {
     }
   };
 
+  const fetchCategoryContent = async () => {
+    try {
+      if (!category || slug || subcategory) {
+        setCategoryContent(null);
+        return;
+      }
+      const res = await fetch(`/api/categories/${category}/content`, {
+        headers: { "Cache-Control": "no-cache" },
+      });
+      const data = await res.json();
+      if (data?.success) setCategoryContent({ hero: data.data?.hero, banners: data.data?.banners || [] });
+      else setCategoryContent(null);
+    } catch {
+      setCategoryContent(null);
+    }
+  };
+
   const fetchProperties = async () => {
     try {
       setLoading(true);
