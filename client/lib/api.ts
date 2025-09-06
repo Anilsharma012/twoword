@@ -135,13 +135,11 @@ export const apiRequest = async (
 ): Promise<{ data: any; status: number; ok: boolean }> => {
   const url = createApiUrl(endpoint);
 
-  // If running inside Builder preview (projects.builder.codes) without an explicit API base URL,
-  // fail fast with a clear error so requests don't hang until timeout.
-  if (typeof window !== "undefined" &&
-      window.location.hostname.includes("projects.builder.codes") &&
-      !API_CONFIG.baseUrl) {
-    throw new Error(
-      "Backend unreachable from Builder preview. Set VITE_API_BASE_URL to a reachable API URL or run the app with a backend proxy. See README for setup."
+  // If running inside Builder preview without an explicit API base URL, warn and attempt relative requests
+  const isBuilderPreview = typeof window !== "undefined" && window.location.hostname.includes("projects.builder.codes");
+  if (isBuilderPreview && !API_CONFIG.baseUrl) {
+    console.warn(
+      "⚠️ Running inside Builder preview without VITE_API_BASE_URL. Attempting relative /api/* requests with reduced timeouts. For reliable operation set VITE_API_BASE_URL to your backend."
     );
   }
 
