@@ -39,16 +39,51 @@ export default function CategoriesGrid() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const handler = () => fetchCategories();
     fetchCategories();
+    window.addEventListener('categories:updated', handler);
+    return () => window.removeEventListener('categories:updated', handler);
   }, []);
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch("/api/categories");
-      const data = await response.json();
+      // Prefer public endpoint with active=true
+      let response = await fetch("/api/categories?active=true");
+      let data: any;
+      try {
+        data = await response.json();
+      } catch {
+        data = { success: false };
+      }
 
-      if (data.success) {
-        setCategories(data.data.slice(0, 10)); // Show top 10 categories
+      if (!response.ok || !data?.success) {
+        // Fallback to admin endpoint and filter active
+        const adminRes = await fetch("/api/admin/categories");
+        const adminData = await adminRes.json().catch(() => ({ success: false, data: [] }));
+        if (adminData?.success) {
+          const mapped = (adminData.data || [])
+            .filter((c: any) => c.isActive === true || c.active === true)
+            .map((c: any) => ({
+              ...c,
+              order: c.sortOrder ?? c.order ?? 0,
+              icon: c.icon || c.iconUrl || "",
+              active: c.isActive ?? c.active ?? true,
+            }));
+          const sorted = mapped.sort((a: any, b: any) => (a.order - b.order) || a.name.localeCompare(b.name));
+          setCategories(sorted.slice(0, 10));
+          return;
+        }
+      }
+
+      if (data?.success) {
+        const mapped = (data.data || []).map((c: any) => ({
+          ...c,
+          order: c.sortOrder ?? c.order ?? 0,
+          icon: c.icon || c.iconUrl || "",
+          active: c.isActive ?? c.active ?? true,
+        }));
+        const sorted = mapped.sort((a: any, b: any) => (a.order - b.order) || a.name.localeCompare(b.name));
+        setCategories(sorted.slice(0, 10));
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
