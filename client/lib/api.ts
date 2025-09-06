@@ -161,11 +161,18 @@ export const apiRequest = async (
   }, effectiveTimeout);
 
   try {
-    const defaultHeaders: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
     const callerHeaders = (options.headers as Record<string, string>) ?? {};
     const stored = getStoredToken();
+
+    // Build default headers but avoid forcing Content-Type for FormData or Blob bodies
+    const defaultHeaders: Record<string, string> = {};
+    const bodyIsFormData =
+      options.body && typeof FormData !== "undefined" && options.body instanceof FormData;
+
+    if (!bodyIsFormData) {
+      defaultHeaders["Content-Type"] = "application/json";
+    }
+
     if (stored && !("Authorization" in callerHeaders)) {
       defaultHeaders.Authorization = `Bearer ${stored}`;
     }
