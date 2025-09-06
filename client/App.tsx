@@ -76,6 +76,7 @@ import TestChat from "./pages/TestChat";
 import Step3Test from "./pages/Step3Test";
 import NetworkStatus from "./components/NetworkStatus";
 import AdsenseProvider from "./components/AdsenseProvider";
+import SubcategoriesPage from "./pages/SubcategoriesPage";
 
 const queryClient = new QueryClient();
 
@@ -175,6 +176,7 @@ function App() {
                   <Route path="/admin/support" element={<Admin />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/admin/ads/categories" element={<CategoriesPage />} />
+                  <Route path="/admin/ads/categories/:categoryId/subcategories" element={<SubcategoriesPage />} />
                   <Route path="/admin/locations/countries" element={<CountriesPage />} />
                   <Route path="/staff/login" element={<StaffLogin />} />
                   <Route path="/staff-dashboard" element={<StaffDashboard />} />
