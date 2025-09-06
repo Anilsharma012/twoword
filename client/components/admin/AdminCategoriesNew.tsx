@@ -225,18 +225,15 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
       const uploadFormData = new FormData();
       uploadFormData.append("icon", file);
 
-      const response = await fetch("/api/admin/categories/upload-icon", {
+      const { apiRequest } = await import("@/lib/api");
+      const response = await apiRequest("admin/categories/upload-icon", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         body: uploadFormData,
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
-
-      if (data && data.success) {
-        handleInputChange("iconUrl", data.data.iconUrl);
+      if (response.ok && response.data && response.data.success) {
+        handleInputChange("iconUrl", response.data.data.iconUrl || response.data.iconUrl);
         toast({
           title: "Success",
           description: "Icon uploaded successfully",
@@ -244,7 +241,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
       } else {
         toast({
           title: "Error",
-          description: (data && data.error) || "Failed to upload icon",
+          description: (response.data && response.data.error) || "Failed to upload icon",
           variant: "destructive",
         });
       }
