@@ -100,6 +100,7 @@ function App() {
                     path="/categories/:category"
                     element={<CategoryProperties />}
                   />
+                  <Route path="/category/:category" element={<CategoryProperties />} />
                   <Route
                     path="/categories/:category/:subcategory"
                     element={<CategoryProperties />}
