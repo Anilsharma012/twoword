@@ -488,14 +488,14 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
           body: JSON.stringify({ updates }),
         });
 
-        const data = await response.json();
+        const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).then(m => m.safeReadResponse(response));
 
-        if (!data.success) {
+        if (!(data && data.success)) {
           // Revert on error
           fetchCategories();
           toast({
             title: "Error",
-            description: data.error || "Failed to update sort order",
+            description: (data && data.error) || "Failed to update sort order",
             variant: "destructive",
           });
         } else {
