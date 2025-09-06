@@ -233,9 +233,9 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         body: uploadFormData,
       });
 
-      const data = await response.json();
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).then(m => m.safeReadResponse(response));
 
-      if (data.success) {
+      if (data && data.success) {
         handleInputChange("iconUrl", data.data.iconUrl);
         toast({
           title: "Success",
@@ -244,7 +244,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
       } else {
         toast({
           title: "Error",
-          description: data.error || "Failed to upload icon",
+          description: (data && data.error) || "Failed to upload icon",
           variant: "destructive",
         });
       }
