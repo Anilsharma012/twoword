@@ -21,7 +21,6 @@ async function run() {
         description: "Brand new properties and launches",
         icon: "🏗️",
         order: 999,
-        active: true,
         createdAt: new Date(),
       },
       $set: {
