@@ -19,9 +19,17 @@ export const useUnreadCount = () => {
 
         if (res && res.data && res.data.data) {
           setUnreadCount(res.data.data.totalUnread || 0);
+        } else {
+          setUnreadCount(0);
         }
       } catch (error: any) {
-        // Log concise error for diagnostics
+        // Gracefully handle HTTP 404 by treating as zero unread
+        const msg = String(error?.message || "");
+        if (msg.includes("HTTP 404")) {
+          if (mounted) setUnreadCount(0);
+          return;
+        }
+        // Log concise error for diagnostics (non-404)
         console.error("Error fetching unread count:", error?.message || error);
       }
     };
