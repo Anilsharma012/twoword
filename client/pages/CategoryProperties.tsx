@@ -75,6 +75,7 @@ export default function CategoryProperties() {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [categoryData, setCategoryData] = useState<any>(null);
+  const [subcategories, setSubcategories] = useState<any[]>([]);
 
   // Get category from URL path
   const getCurrentCategory = () => {
