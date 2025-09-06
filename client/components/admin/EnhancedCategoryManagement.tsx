@@ -142,7 +142,7 @@ export default function EnhancedCategoryManagement() {
         credentials: "include",
       });
 
-      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).then(m => m.safeReadResponse(response));
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
       if (data && data.success) {
         return data.data.iconUrl;
       }
