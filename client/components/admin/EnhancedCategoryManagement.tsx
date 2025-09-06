@@ -584,22 +584,27 @@ export default function EnhancedCategoryManagement() {
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      {(category.subcategories || [])
-                        .slice(0, 3)
-                        .map((sub, subIndex) => (
-                          <Badge
-                            key={subIndex}
-                            variant="outline"
-                            className="mr-1 mb-1"
-                          >
-                            {sub.name} ({sub.count})
+                      <button
+                        className="text-[#C70000] underline text-sm"
+                        aria-label={`Manage subcategories for ${category.name}`}
+                        onClick={() => (window.location.href = `/admin/ads/categories/${category._id}/subcategories`)}
+                      >
+                        Manage Subcategories ({(category.subcategories || []).length})
+                      </button>
+                      <div className="pt-1">
+                        {(category.subcategories || [])
+                          .slice(0, 3)
+                          .map((sub, subIndex) => (
+                            <Badge key={subIndex} variant="outline" className="mr-1 mb-1">
+                              {sub.name} ({sub.count})
+                            </Badge>
+                          ))}
+                        {(category.subcategories || []).length > 3 && (
+                          <Badge variant="outline">
+                            +{(category.subcategories || []).length - 3} more
                           </Badge>
-                        ))}
-                      {(category.subcategories || []).length > 3 && (
-                        <Badge variant="outline">
-                          +{(category.subcategories || []).length - 3} more
-                        </Badge>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
