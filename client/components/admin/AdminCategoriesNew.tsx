@@ -178,16 +178,16 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
           Authorization: `Bearer ${token}`,
         },
       });
-      const data = await response.json();
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
 
-      if (data.success) {
+      if (data && data.success) {
         setCategories(data.data.categories);
         setTotalPages(data.data.pagination.pages);
         setTotal(data.data.pagination.total);
       } else {
         toast({
           title: "Error",
-          description: data.error || "Failed to fetch categories",
+          description: (data && data.error) || "Failed to fetch categories",
           variant: "destructive",
         });
       }
@@ -233,9 +233,9 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         body: uploadFormData,
       });
 
-      const data = await response.json();
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
 
-      if (data.success) {
+      if (data && data.success) {
         handleInputChange("iconUrl", data.data.iconUrl);
         toast({
           title: "Success",
@@ -244,7 +244,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
       } else {
         toast({
           title: "Error",
-          description: data.error || "Failed to upload icon",
+          description: (data && data.error) || "Failed to upload icon",
           variant: "destructive",
         });
       }
@@ -297,13 +297,14 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
 
-      if (data.success) {
+      if (data && data.success) {
         toast({
           title: "Success",
           description: `Category ${isEditing ? "updated" : "created"} successfully`,
         });
+        window.dispatchEvent(new Event('categories:updated'));
         fetchCategories(); // Refresh to get accurate data
         resetForm();
         setShowDialog(false);
@@ -319,7 +320,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         toast({
           title: "Error",
           description:
-            data.error ||
+            (data && data.error) ||
             `Failed to ${isEditing ? "update" : "create"} category`,
           variant: "destructive",
         });
@@ -363,13 +364,14 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         },
       });
 
-      const data = await response.json();
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
 
-      if (data.success) {
+      if (data && data.success) {
         toast({
           title: "Success",
           description: "Category deleted successfully",
         });
+        window.dispatchEvent(new Event('categories:updated'));
         fetchCategories(); // Refresh pagination counts
       } else {
         // Revert optimistic update on error
@@ -378,7 +380,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         }
         toast({
           title: "Error",
-          description: data.error || "Failed to delete category",
+          description: (data && data.error) || "Failed to delete category",
           variant: "destructive",
         });
       }
@@ -412,16 +414,16 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         },
       );
 
-      const data = await response.json();
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
 
-      if (!data.success) {
+      if (!(data && data.success)) {
         // Revert optimistic update on error
         setCategories((prev) =>
           prev.map((c) => (c._id === category._id ? category : c)),
         );
         toast({
           title: "Error",
-          description: data.error || "Failed to update category",
+          description: (data && data.error) || "Failed to update category",
           variant: "destructive",
         });
       }
@@ -488,14 +490,14 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
           body: JSON.stringify({ updates }),
         });
 
-        const data = await response.json();
+        const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
 
-        if (!data.success) {
+        if (!(data && data.success)) {
           // Revert on error
           fetchCategories();
           toast({
             title: "Error",
-            description: data.error || "Failed to update sort order",
+            description: (data && data.error) || "Failed to update sort order",
             variant: "destructive",
           });
         } else {
@@ -503,6 +505,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
             title: "Success",
             description: "Category order updated successfully",
           });
+          window.dispatchEvent(new Event('categories:updated'));
         }
       } catch (error) {
         console.error("Error updating sort order:", error);

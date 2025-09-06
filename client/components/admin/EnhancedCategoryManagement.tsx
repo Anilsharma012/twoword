@@ -40,6 +40,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { api } from "@/lib/api";
+import { createApiUrl } from "@/lib/api";
 
 interface Category {
   _id: string;
@@ -100,32 +102,28 @@ export default function EnhancedCategoryManagement() {
       setLoading(true);
       setError("");
 
-      const response = await fetch("/api/admin/categories", {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get("admin/categories", token).catch((e: any) => {
+        throw e;
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          const list: Category[] = Array.isArray(data.data)
-            ? data.data
-            : Array.isArray(data.data?.categories)
-              ? data.data.categories
-              : [];
-          setCategories(
-            list.sort(
-              (a: Category, b: Category) => (a?.order ?? 0) - (b?.order ?? 0),
-            ),
-          );
-        } else {
-          setError(data.error || "Failed to fetch categories");
-        }
+      const data = res?.data;
+      if (data?.success) {
+        const list: Category[] = Array.isArray(data.data)
+          ? data.data
+          : Array.isArray(data.data?.categories)
+          ? data.data.categories
+          : [];
+        setCategories(
+          list.sort(
+            (a: Category, b: Category) => (a?.order ?? 0) - (b?.order ?? 0),
+          ),
+        );
       } else {
-        setError("Failed to fetch categories");
+        setError(data?.error || "Failed to fetch categories");
       }
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      setError("Failed to fetch categories");
+    } catch (error: any) {
+      console.error("Error fetching categories:", error?.message || error);
+      setError(error?.message || "Failed to fetch categories");
     } finally {
       setLoading(false);
     }
@@ -135,17 +133,24 @@ export default function EnhancedCategoryManagement() {
     const formData = new FormData();
     formData.append("icon", file);
 
-    const response = await fetch("/api/admin/categories/upload-icon", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
+    try {
+      const url = "/api/admin/categories/upload-icon"; // use relative path so proxy handles requests in preview
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
 
-    const data = await response.json();
-    if (data.success) {
-      return data.data.iconUrl;
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
+      if (data && data.success) {
+        return data.data.iconUrl;
+      }
+
+      throw new Error((data && data.error) || "Failed to upload icon");
+    } catch (error: any) {
+      console.error("Error uploading icon:", error?.message || error);
+      throw error;
     }
-    throw new Error(data.error || "Failed to upload icon");
   };
 
   const createCategory = async () => {
@@ -185,54 +190,41 @@ export default function EnhancedCategoryManagement() {
         isActive: newCategory.active ?? true,
       };
 
-      const response = await fetch("/api/admin/categories", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(categoryPayload),
-      });
+      // Use centralized api helper for creating category
+      const created = await api
+        .post("admin/categories", categoryPayload, token)
+        .catch((e: any) => {
+          throw e;
+        });
 
-      // If created, create subcategories separately
-
-      if (!response.ok) {
-        const text = await response.text();
-        let err = "Failed to create category";
-        try { err = JSON.parse(text).error || err; } catch (e) {}
-        setError(err);
+      const createdData = created?.data;
+      if (!createdData?.success) {
+        setError(createdData?.error || "Failed to create category");
         setUploading(false);
         return;
       }
 
-      const data = await response.json();
-      if (!data.success) {
-        setError(data.error || "Failed to create category");
-        setUploading(false);
-        return;
-      }
-
-      const createdCategory = data.data?.category || { _id: data.data?._id };
+      const createdCategory = createdData.data?.category || { _id: createdData.data?._id };
       const categoryId = createdCategory._id;
+
+      // notify frontend to refresh categories
+      window.dispatchEvent(new Event('categories:updated'));
 
       // create subcategories via API
       for (let i = 0; i < processedSubcategories.length; i++) {
         const sub = processedSubcategories[i];
         try {
-          await fetch("/api/admin/subcategories", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
+          await api.post(
+            "admin/subcategories",
+            {
               categoryId,
               name: sub.name,
               iconUrl: iconUrl || "/placeholder.svg",
               sortOrder: i + 1,
               isActive: true,
-            }),
-          });
+            },
+            token,
+          );
         } catch (e) {
           console.warn("Failed to create subcategory", sub, e);
         }
@@ -242,9 +234,9 @@ export default function EnhancedCategoryManagement() {
       resetForm();
       setIsCreateDialogOpen(false);
       setUploading(false);
-    } catch (error) {
-      console.error("Error creating category:", error);
-      setError("Failed to create category");
+    } catch (error: any) {
+      console.error("Error creating category:", error?.message || error);
+      setError(error?.message || "Failed to create category");
     } finally {
       setUploading(false);
     }
@@ -257,29 +249,33 @@ export default function EnhancedCategoryManagement() {
     if (!token) return;
 
     try {
-      const response = await fetch(`/api/admin/categories/${categoryId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(updates),
-      });
-
-      if (response.ok) {
+      const res = await api.put(`admin/categories/${categoryId}`, updates, token);
+      if (res && res.data && res.data.success) {
         fetchCategories();
       } else {
-        const data = await response.json();
-        setError(data.error || "Failed to update category");
+        setError(res?.data?.error || "Failed to update category");
       }
-    } catch (error) {
-      console.error("Error updating category:", error);
-      setError("Failed to update category");
+    } catch (error: any) {
+      console.error("Error updating category:", error?.message || error);
+      setError(error?.message || "Failed to update category");
     }
   };
 
   const toggleCategoryStatus = async (categoryId: string, active: boolean) => {
-    await updateCategory(categoryId, { active });
+    // Optimistic update with rollback on failure
+    const prev = [...categories];
+    setCategories((cs) => cs.map((c) => (c._id === categoryId ? { ...c, active } : c)));
+    try {
+      const res = await api.put(`admin/categories/${categoryId}`, { active }, token);
+      if (!res?.data?.success) {
+        setCategories(prev);
+        throw new Error(res?.data?.error || "Failed to update status");
+      }
+      window.dispatchEvent(new Event('categories:updated'));
+    } catch (e: any) {
+      setCategories(prev);
+      console.error("Toggle status failed:", e?.message || e);
+    }
   };
 
   const updateCategoryOrder = async (
@@ -305,20 +301,16 @@ export default function EnhancedCategoryManagement() {
       return;
 
     try {
-      const response = await fetch(`/api/admin/categories/${categoryId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.ok) {
+      const res = await api.delete(`admin/categories/${categoryId}`, token);
+      if (res && res.data && res.data.success) {
         setCategories(categories.filter((cat) => cat._id !== categoryId));
+        window.dispatchEvent(new Event('categories:updated'));
       } else {
-        const data = await response.json();
-        setError(data.error || "Failed to delete category");
+        setError(res?.data?.error || "Failed to delete category");
       }
-    } catch (error) {
-      console.error("Error deleting category:", error);
-      setError("Failed to delete category");
+    } catch (error: any) {
+      console.error("Error deleting category:", error?.message || error);
+      setError(error?.message || "Failed to delete category");
     }
   };
 
@@ -440,6 +432,7 @@ export default function EnhancedCategoryManagement() {
         <Button
           onClick={() => setIsCreateDialogOpen(true)}
           className="bg-[#C70000] hover:bg-[#A60000]"
+          aria-label="Add Category"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Category
@@ -528,7 +521,7 @@ export default function EnhancedCategoryManagement() {
             <SelectItem value="inactive">Inactive Only</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant="outline">
+        <Button variant="outline" aria-label="Search categories">
           <Search className="h-4 w-4 mr-2" />
           Search
         </Button>
@@ -612,6 +605,7 @@ export default function EnhancedCategoryManagement() {
                         onCheckedChange={(checked) =>
                           toggleCategoryStatus(category._id, checked)
                         }
+                        aria-label={`Toggle status for ${category.name}`}
                       />
                       <Badge
                         variant={category.active ? "default" : "secondary"}
@@ -639,6 +633,7 @@ export default function EnhancedCategoryManagement() {
                           }
                           disabled={index === 0}
                           className="h-6 w-6 p-0"
+                          aria-label="Move category up"
                         >
                           <ChevronUp className="h-3 w-3" />
                         </Button>
@@ -650,6 +645,7 @@ export default function EnhancedCategoryManagement() {
                           }
                           disabled={index === filteredCategories.length - 1}
                           className="h-6 w-6 p-0"
+                          aria-label="Move category down"
                         >
                           <ChevronDown className="h-3 w-3" />
                         </Button>
@@ -658,6 +654,9 @@ export default function EnhancedCategoryManagement() {
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
+                      <Button size="sm" variant="outline" aria-label="View category" onClick={() => { /* no-op view */ }}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       <Button
                         size="sm"
                         variant="outline"
@@ -665,14 +664,20 @@ export default function EnhancedCategoryManagement() {
                           setEditingCategory(category);
                           setIsCreateDialogOpen(true);
                         }}
+                        aria-label="Edit category"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => deleteCategory(category._id)}
+                        onClick={() => {
+                          if (window.confirm("Delete this category? This cannot be undone.")) {
+                            deleteCategory(category._id);
+                          }
+                        }}
                         className="text-red-600 hover:text-red-700"
+                        aria-label="Delete category"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

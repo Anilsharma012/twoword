@@ -72,8 +72,6 @@ const getApiBaseUrl = () => {
   return "";
 };
 
-
-
 const API_BASE_URL = getApiBaseUrl();
 const environment = detectEnvironment();
 
@@ -85,8 +83,6 @@ export const API_CONFIG = {
   environment,
 };
 // ⬇️ add this small helper near the top of the file
-
-
 
 // Helper function to create API URLs
 export const createApiUrl = (endpoint: string): string => {
@@ -122,7 +118,6 @@ export const createApiUrl = (endpoint: string): string => {
   return relativeUrl;
 };
 
-
 // ---------- helpers ----------
 const getStoredToken = (): string | null => {
   try {
@@ -136,11 +131,34 @@ const getStoredToken = (): string | null => {
 export const apiRequest = async (
   endpoint: string,
   options: RequestInit = {},
-  retryCount = 0
+  retryCount = 0,
 ): Promise<{ data: any; status: number; ok: boolean }> => {
   const url = createApiUrl(endpoint);
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
+  // Allow some endpoints (chat unread count) a longer timeout
+  const effectiveTimeout = endpoint.includes("chat/unread-count")
+    ? Math.max(API_CONFIG.timeout, 30000)
+    : API_CONFIG.timeout;
+
+  const timeoutId = setTimeout(() => {
+    try {
+      // Abort with a reason when supported for better diagnostics
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      if (typeof controller.abort === "function") {
+        try {
+          // some browsers support abort with reason
+          controller.abort(new Error("timeout"));
+        } catch {
+          controller.abort();
+        }
+      } else {
+        controller.abort();
+      }
+    } catch (e) {
+      // swallow
+    }
+  }, effectiveTimeout);
 
   try {
     const defaultHeaders: Record<string, string> = {
@@ -180,11 +198,15 @@ export const apiRequest = async (
     return { data: responseData, status: response.status, ok: response.ok };
   } catch (error: any) {
     clearTimeout(timeoutId);
-    if (error.name === "AbortError") {
-      throw new Error(`Request timeout after ${API_CONFIG.timeout}ms`);
+    if (error && error.name === "AbortError") {
+      throw new Error(`Request timeout after ${effectiveTimeout}ms`);
     }
     if (error.message?.includes("Failed to fetch")) {
       throw new Error(`Network error: Unable to connect to server at ${url}`);
+    }
+    // If the abort was triggered with a reason, provide that reason
+    if (error?.message && error.message !== "AbortError") {
+      throw new Error(error.message);
     }
     throw error;
   }
@@ -302,4 +324,3 @@ export const api = {
     return { data: response.data };
   },
 };
-

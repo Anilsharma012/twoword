@@ -66,10 +66,21 @@ export default function AdminCategories({ token }: AdminCategoriesProps) {
           Authorization: `Bearer ${token}`,
         },
       });
-      const data = await response.json();
+      const { data } = await (await import('../lib/response-utils')).safeReadResponse(response);
 
-      if (data.success) {
-        setCategories(data.data);
+      if (data && data.success) {
+        const list = Array.isArray(data.data)
+          ? data.data
+          : Array.isArray(data.data?.categories)
+          ? data.data.categories
+          : [];
+        const normalized = list.map((cat: any) => ({
+          ...cat,
+          icon: cat.icon ?? cat.iconUrl,
+          order: cat.order ?? cat.sortOrder,
+          active: cat.active ?? cat.isActive,
+        }));
+        setCategories(normalized);
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -96,9 +107,9 @@ export default function AdminCategories({ token }: AdminCategoriesProps) {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      const { data } = await (await import('../lib/response-utils')).safeReadResponse(response);
 
-      if (data.success) {
+      if (data && data.success) {
         const createdCategoryId = data.data?.category?._id || data.data?._id;
         // create subcategories if any
         if (newCategory.subcategories && newCategory.subcategories.length && createdCategoryId) {
@@ -126,6 +137,7 @@ export default function AdminCategories({ token }: AdminCategoriesProps) {
         }
 
         fetchCategories();
+        window.dispatchEvent(new Event('categories:updated'));
         setNewCategory({
           name: "",
           slug: "",
@@ -167,11 +179,12 @@ export default function AdminCategories({ token }: AdminCategoriesProps) {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      const { data } = await (await import('../lib/response-utils')).safeReadResponse(response);
 
-      if (data.success) {
+      if (data && data.success) {
         fetchCategories();
         setEditingCategory(null);
+        window.dispatchEvent(new Event('categories:updated'));
       }
     } catch (error) {
       console.error("Error updating category:", error);
@@ -191,12 +204,13 @@ export default function AdminCategories({ token }: AdminCategoriesProps) {
         },
       });
 
-      const data = await response.json();
+      const { data } = await (await import('../lib/response-utils')).safeReadResponse(response);
 
-      if (data.success) {
+      if (data && data.success) {
         fetchCategories();
+        window.dispatchEvent(new Event('categories:updated'));
       } else {
-        alert(data.error || "Failed to delete category");
+        alert((data && data.error) || "Failed to delete category");
       }
     } catch (error) {
       console.error("Error deleting category:", error);

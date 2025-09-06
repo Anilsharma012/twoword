@@ -1095,7 +1095,13 @@ export default function Admin() {
         case "feature-section":
           return <PropertyManagement />;
         case "countries":
-          return <CategoryManagement />;
+          return (
+            <div className="p-6">
+              <h3 className="text-lg font-semibold mb-2">Countries</h3>
+              <p className="text-sm text-gray-600 mb-4">This section moved to dedicated page.</p>
+              <a className="text-[#C70000] underline" href="/admin/locations/countries">Go to Countries</a>
+            </div>
+          );
         case "states":
           return <CategoryManagement />;
         case "cities":

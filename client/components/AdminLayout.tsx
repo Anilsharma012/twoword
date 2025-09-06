@@ -276,6 +276,12 @@ export default function AdminLayout({
 }: AdminLayoutProps) {
   const { user, logout } = useAuth();
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<string[]>([
+    "dashboard",
+  ]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // Safety check
   if (!user) {
     return (
@@ -286,12 +292,6 @@ export default function AdminLayout({
       </div>
     );
   }
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<string[]>([
-    "dashboard",
-  ]);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   const toggleSection = (sectionId: string) => {
     setExpandedSections((prev) =>
       prev.includes(sectionId)
@@ -310,56 +310,105 @@ export default function AdminLayout({
     const isExpanded = expandedSections.includes(item.id);
     const isActive = activeSection === item.id;
 
+    const isRouteLink = level > 0 && (item.id === "categories" || item.id === "countries");
+    const href = item.id === "categories" ? "/admin/ads/categories" : item.id === "countries" ? "/admin/locations/countries" : undefined;
+
     return (
       <div key={item.id}>
-        <button
-          onClick={() => {
-            if (hasChildren) {
-              toggleSection(item.id);
-            } else {
-              onSectionChange(item.id);
-              setMobileMenuOpen(false);
-            }
-          }}
-          className={cn(
-            "w-full flex items-center justify-between px-3 py-2 text-left rounded-lg transition-colors",
-            level === 0 ? "font-medium" : "text-sm font-normal",
-            level > 0 && "ml-4",
-            isActive
-              ? "bg-[#C70000] text-white"
-              : "text-gray-700 hover:bg-gray-100",
-            sidebarCollapsed && level === 0 && "justify-center px-2",
-          )}
-        >
-          <div className="flex items-center space-x-3">
-            <item.icon
-              className={cn(
-                "flex-shrink-0",
-                level === 0 ? "h-5 w-5" : "h-4 w-4",
-              )}
-            />
-            {!sidebarCollapsed && (
-              <span className="truncate">{item.label}</span>
+        {isRouteLink ? (
+          <a
+            href={href}
+            className={cn(
+              "w-full flex items-center justify-between px-3 py-2 text-left rounded-lg transition-colors",
+              level === 0 ? "font-medium" : "text-sm font-normal",
+              level > 0 && "ml-4",
+              isActive
+                ? "bg-[#C70000] text-white"
+                : "text-gray-700 hover:bg-gray-100",
+              sidebarCollapsed && level === 0 && "justify-center px-2",
             )}
-          </div>
-          {!sidebarCollapsed && (
-            <div className="flex items-center space-x-2">
-              {item.badge && (
-                <Badge variant="destructive" className="h-5 px-1.5 text-xs">
-                  {item.badge}
-                </Badge>
-              )}
-              {hasChildren && (
-                <ChevronRight
-                  className={cn(
-                    "h-4 w-4 transition-transform",
-                    isExpanded && "rotate-90",
-                  )}
-                />
+            aria-label={item.label}
+          >
+            <div className="flex items-center space-x-3">
+              <item.icon
+                className={cn(
+                  "flex-shrink-0",
+                  level === 0 ? "h-5 w-5" : "h-4 w-4",
+                )}
+              />
+              {!sidebarCollapsed && (
+                <span className="truncate">{item.label}</span>
               )}
             </div>
-          )}
-        </button>
+            {!sidebarCollapsed && (
+              <div className="flex items-center space-x-2">
+                {item.badge && (
+                  <Badge variant="destructive" className="h-5 px-1.5 text-xs">
+                    {item.badge}
+                  </Badge>
+                )}
+                {hasChildren && (
+                  <ChevronRight
+                    className={cn(
+                      "h-4 w-4 transition-transform",
+                      isExpanded && "rotate-90",
+                    )}
+                  />
+                )}
+              </div>
+            )}
+          </a>
+        ) : (
+          <button
+            onClick={() => {
+              if (hasChildren) {
+                toggleSection(item.id);
+              } else {
+                onSectionChange(item.id);
+                setMobileMenuOpen(false);
+              }
+            }}
+            className={cn(
+              "w-full flex items-center justify-between px-3 py-2 text-left rounded-lg transition-colors",
+              level === 0 ? "font-medium" : "text-sm font-normal",
+              level > 0 && "ml-4",
+              isActive
+                ? "bg-[#C70000] text-white"
+                : "text-gray-700 hover:bg-gray-100",
+              sidebarCollapsed && level === 0 && "justify-center px-2",
+            )}
+            aria-label={item.label}
+          >
+            <div className="flex items-center space-x-3">
+              <item.icon
+                className={cn(
+                  "flex-shrink-0",
+                  level === 0 ? "h-5 w-5" : "h-4 w-4",
+                )}
+              />
+              {!sidebarCollapsed && (
+                <span className="truncate">{item.label}</span>
+              )}
+            </div>
+            {!sidebarCollapsed && (
+              <div className="flex items-center space-x-2">
+                {item.badge && (
+                  <Badge variant="destructive" className="h-5 px-1.5 text-xs">
+                    {item.badge}
+                  </Badge>
+                )}
+                {hasChildren && (
+                  <ChevronRight
+                    className={cn(
+                      "h-4 w-4 transition-transform",
+                      isExpanded && "rotate-90",
+                    )}
+                  />
+                )}
+              </div>
+            )}
+          </button>
+        )}
 
         {hasChildren && isExpanded && !sidebarCollapsed && (
           <div className="mt-1 space-y-1">

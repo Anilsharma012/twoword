@@ -446,69 +446,40 @@ export const startPropertyConversation: RequestHandler = async (req, res) => {
   }
 };
 
-// Get unread message count
+// Get unread message count (optimized to avoid heavy aggregation)
 export const getUnreadCount: RequestHandler = async (req, res) => {
   try {
     const db = getDatabase();
     const userId = (req as any).userId;
 
-    const result = await db
+    // Get conversation IDs where the user is a participant
+    const convs = await db
       .collection("conversations")
-      .aggregate([
-        {
-          $match: {
-            participants: userId,
-          },
-        },
-        {
-          $lookup: {
-            from: "messages",
-            localField: "_id",
-            foreignField: "conversationId",
-            as: "messages",
-          },
-        },
-        {
-          $project: {
-            _id: 1,
-            unreadCount: {
-              $size: {
-                $filter: {
-                  input: "$messages",
-                  cond: {
-                    $and: [
-                      { $ne: ["$$this.senderId", userId] },
-                      {
-                        $not: {
-                          $in: [
-                            userId,
-                            {
-                              $map: {
-                                input: "$$this.readBy",
-                                as: "reader",
-                                in: "$$reader.userId",
-                              },
-                            },
-                          ],
-                        },
-                      },
-                    ],
-                  },
-                },
-              },
-            },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            totalUnread: { $sum: "$unreadCount" },
-          },
-        },
-      ])
+      .find({ participants: userId }, { projection: { _id: 1 } })
       .toArray();
 
-    const totalUnread = result.length > 0 ? result[0].totalUnread : 0;
+    const convIds = convs.map((c: any) => c._id).filter(Boolean);
+
+    if (convIds.length === 0) {
+      const responseEmpty: ApiResponse<{ totalUnread: number }> = {
+        success: true,
+        data: { totalUnread: 0 },
+      };
+      return res.json(responseEmpty);
+    }
+
+    // Count messages that are not sent by user and which user hasn't read
+    const filter: any = {
+      conversationId: { $in: convIds },
+      senderId: { $ne: userId },
+      $or: [
+        { readBy: { $exists: false } },
+        { readBy: { $size: 0 } },
+        { "readBy.userId": { $ne: userId } },
+      ],
+    };
+
+    const totalUnread = await db.collection("messages").countDocuments(filter);
 
     const response: ApiResponse<{ totalUnread: number }> = {
       success: true,
