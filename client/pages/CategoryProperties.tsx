@@ -281,6 +281,52 @@ export default function CategoryProperties() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
+      {/* Hero and Banners for category page */}
+      {!slug && !subcategory && categoryContent && (
+        <div className="px-0">
+          {categoryContent.hero?.active && categoryContent.hero?.images?.length ? (
+            <div className="w-full">
+              <div className="w-full overflow-x-auto">
+                <div className="flex gap-2 w-full min-w-full snap-x">
+                  {categoryContent.hero.images.map((img, i) => (
+                    <img key={i} src={img} alt={categoryContent.hero?.title || "Hero"} className="w-full h-52 md:h-72 object-cover flex-shrink-0 snap-center" />
+                  ))}
+                </div>
+              </div>
+              <div className="px-4 py-3">
+                {categoryContent.hero.title && (
+                  <h1 className="text-xl font-semibold">{categoryContent.hero.title}</h1>
+                )}
+                {categoryContent.hero.subtitle && (
+                  <p className="text-gray-600">{categoryContent.hero.subtitle}</p>
+                )}
+                {categoryContent.hero.ctaHref && categoryContent.hero.ctaLabel && (
+                  <button
+                    className="mt-3 bg-[#C70000] text-white px-4 py-2 rounded"
+                    onClick={() => (window.location.href = categoryContent.hero!.ctaHref!)}
+                    aria-label="Hero CTA"
+                  >
+                    {categoryContent.hero.ctaLabel}
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {Array.isArray(categoryContent.banners) && categoryContent.banners.length > 0 ? (
+            <div className="px-4 py-3">
+              <div className="flex gap-3 overflow-x-auto">
+                {categoryContent.banners.map((b: any, i: number) => (
+                  <a key={i} href={b.href || "#"} className="block" aria-label={`Banner ${i + 1}`}>
+                    <img src={b.image} alt={categoryContent.hero?.title || "Banner"} className="h-24 w-auto rounded border" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
+
       {/* Subcategories grid for category page */}
       {!slug && !subcategory && subcategories && (
         <div className="px-4 py-4">
