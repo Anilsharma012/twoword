@@ -39,7 +39,7 @@ const getApiBaseUrl = () => {
 
   if (typeof window !== "undefined") {
     const { protocol, hostname, port } = window.location;
-    console.log("��� Current location:", {
+    console.log("📍 Current location:", {
       protocol,
       hostname,
       port,
@@ -210,6 +210,10 @@ export const apiRequest = async (
       } catch {
         responseData = {};
       }
+    }
+
+    if (!response.ok) {
+      console.warn('⚠️ API responded with error', { url, status: response.status, data: responseData });
     }
 
     return { data: responseData, status: response.status, ok: response.ok };
