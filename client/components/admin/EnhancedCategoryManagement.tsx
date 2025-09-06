@@ -92,7 +92,14 @@ export default function EnhancedCategoryManagement() {
   });
 
   useEffect(() => {
+    const onUpdate = () => fetchCategories();
+    window.addEventListener('categories:updated', onUpdate);
+    window.addEventListener('subcategories:updated', onUpdate);
     fetchCategories();
+    return () => {
+      window.removeEventListener('categories:updated', onUpdate);
+      window.removeEventListener('subcategories:updated', onUpdate);
+    };
   }, [token]);
 
   const fetchCategories = async () => {
