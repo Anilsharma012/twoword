@@ -40,6 +40,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { api } from "@/lib/api";
+import { createApiUrl } from "@/lib/api";
 
 interface Category {
   _id: string;
