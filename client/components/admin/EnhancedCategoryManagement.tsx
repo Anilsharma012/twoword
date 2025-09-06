@@ -134,12 +134,11 @@ export default function EnhancedCategoryManagement() {
     formData.append("icon", file);
 
     try {
-      const url = createApiUrl("admin/categories/upload-icon");
+      const url = "/api/admin/categories/upload-icon"; // use relative path so proxy handles requests in preview
       const response = await fetch(url, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
-        credentials: "include",
       });
 
       const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
