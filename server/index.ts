@@ -804,6 +804,23 @@ export function createServer() {
     handleIconUpload,
   );
 
+  // ADMIN Category Content routes
+  app.get(
+    "/api/admin/categories/:id/content",
+    authenticateToken,
+    requireAdmin,
+    getAdminCategoryContent,
+  );
+  app.put(
+    "/api/admin/categories/:id/content",
+    authenticateToken,
+    requireAdmin,
+    upsertAdminCategoryContent,
+  );
+
+  // PUBLIC Category content
+  app.get("/api/categories/:slug/content", getPublicCategoryContent);
+
   // ADMIN Subcategory routes
   app.get(
     "/api/admin/subcategories",
