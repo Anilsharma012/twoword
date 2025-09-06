@@ -134,6 +134,17 @@ export const apiRequest = async (
   retryCount = 0,
 ): Promise<{ data: any; status: number; ok: boolean }> => {
   const url = createApiUrl(endpoint);
+
+  // If running inside Builder preview (projects.builder.codes) without an explicit API base URL,
+  // fail fast with a clear error so requests don't hang until timeout.
+  if (typeof window !== "undefined" &&
+      window.location.hostname.includes("projects.builder.codes") &&
+      !API_CONFIG.baseUrl) {
+    throw new Error(
+      "Backend unreachable from Builder preview. Set VITE_API_BASE_URL to a reachable API URL or run the app with a backend proxy. See README for setup."
+    );
+  }
+
   const controller = new AbortController();
   // Allow some endpoints (chat unread count) a longer timeout
   const effectiveTimeout = endpoint.includes("chat/unread-count")
