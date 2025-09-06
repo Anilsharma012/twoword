@@ -209,6 +209,10 @@ export const apiRequest = async (
     if (error.message?.includes("Failed to fetch")) {
       throw new Error(`Network error: Unable to connect to server at ${url}`);
     }
+    // If the abort was triggered with a reason, provide that reason
+    if (error?.message && error.message !== "AbortError") {
+      throw new Error(error.message);
+    }
     throw error;
   }
 }; // 👈 NOTE: function yahin close ho rahi hai
