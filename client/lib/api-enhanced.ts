@@ -61,6 +61,19 @@ export const createApiUrl = (endpoint: string): string => {
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint.slice(1) : endpoint;
 
   if (API_CONFIG.baseUrl) {
+    // If baseUrl points to localhost but the app is being served from a different host
+    // (e.g. remote preview), prefer using a relative URL so the proxy can route requests.
+    const isLocalHostBase = /localhost|127\.0\.0\.1/.test(API_CONFIG.baseUrl);
+    const servedFromLocalHost = typeof window !== 'undefined' && /localhost|127\.0\.0\.1/.test(window.location.hostname);
+
+    if (isLocalHostBase && typeof window !== 'undefined' && !servedFromLocalHost) {
+      const relativeUrlFallback = `/api/${cleanEndpoint.replace("api/", "")}`;
+      console.log(
+        `🔗 API URL adjusted to relative (${relativeUrlFallback}) because baseUrl is localhost and app is not served from localhost. (base: ${API_CONFIG.baseUrl})`,
+      );
+      return relativeUrlFallback;
+    }
+
     const fullUrl = `${API_CONFIG.baseUrl}/api/${cleanEndpoint.replace("api/", "")}`;
     console.log(
       `🔗 API URL: ${fullUrl} (Environment: ${API_CONFIG.environment})`,
