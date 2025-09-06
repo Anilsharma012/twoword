@@ -72,8 +72,6 @@ const getApiBaseUrl = () => {
   return "";
 };
 
-
-
 const API_BASE_URL = getApiBaseUrl();
 const environment = detectEnvironment();
 
@@ -85,8 +83,6 @@ export const API_CONFIG = {
   environment,
 };
 // ⬇️ add this small helper near the top of the file
-
-
 
 // Helper function to create API URLs
 export const createApiUrl = (endpoint: string): string => {
@@ -122,7 +118,6 @@ export const createApiUrl = (endpoint: string): string => {
   return relativeUrl;
 };
 
-
 // ---------- helpers ----------
 const getStoredToken = (): string | null => {
   try {
@@ -136,7 +131,7 @@ const getStoredToken = (): string | null => {
 export const apiRequest = async (
   endpoint: string,
   options: RequestInit = {},
-  retryCount = 0
+  retryCount = 0,
 ): Promise<{ data: any; status: number; ok: boolean }> => {
   const url = createApiUrl(endpoint);
   const controller = new AbortController();
@@ -150,10 +145,10 @@ export const apiRequest = async (
       // Abort with a reason when supported for better diagnostics
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      if (typeof controller.abort === 'function') {
+      if (typeof controller.abort === "function") {
         try {
           // some browsers support abort with reason
-          controller.abort(new Error('timeout'));
+          controller.abort(new Error("timeout"));
         } catch {
           controller.abort();
         }

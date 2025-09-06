@@ -475,7 +475,7 @@ export const getUnreadCount: RequestHandler = async (req, res) => {
       $or: [
         { readBy: { $exists: false } },
         { readBy: { $size: 0 } },
-        { 'readBy.userId': { $ne: userId } },
+        { "readBy.userId": { $ne: userId } },
       ],
     };
 
