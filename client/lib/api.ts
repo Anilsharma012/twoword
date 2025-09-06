@@ -90,7 +90,7 @@ export const createApiUrl = (endpoint: string): string => {
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint.slice(1) : endpoint;
 
   // Log API configuration for debugging
-  console.log("🔗 API Config:", {
+  console.log("��� API Config:", {
     baseUrl: API_CONFIG.baseUrl,
     endpoint: cleanEndpoint,
     currentLocation:
@@ -332,7 +332,9 @@ export const api = {
       body: data ? JSON.stringify(data) : undefined,
       headers,
     });
-    if (!response.ok) throw new Error(response.data.error || "Request failed");
+    if (!response.ok) throw new Error(
+      response.data?.error || response.data?.message || (typeof response.data?.raw === "string" ? response.data.raw : "") || `HTTP ${response.status}`
+    );
     return { data: response.data };
   },
 
