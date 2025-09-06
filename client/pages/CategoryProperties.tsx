@@ -257,6 +257,36 @@ export default function CategoryProperties() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
+      {/* Subcategories grid for category page */}
+      {!slug && !subcategory && subcategories && (
+        <div className="px-4 py-4">
+          <h2 className="text-lg font-semibold mb-3">Subcategories</h2>
+          {subcategories.length === 0 ? (
+            <div className="text-gray-500">No subcategories yet</div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {subcategories.map((s: any) => (
+                <button
+                  key={s._id || s.slug}
+                  onClick={() => (window.location.href = `/categories/${category}/${s.slug}`)}
+                  className="bg-white border border-gray-200 rounded-lg p-3 flex items-center gap-3 hover:bg-gray-50"
+                >
+                  {s.iconUrl ? (
+                    <img src={s.iconUrl} alt={s.name} className="w-8 h-8 rounded" />
+                  ) : (
+                    <div className="w-8 h-8 bg-gray-100 rounded" />
+                  )}
+                  <div className="text-left">
+                    <div className="font-medium text-sm">{s.name}</div>
+                    <div className="text-xs text-gray-500">/{s.slug}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Mobile Filters Overlay */}
       {showFilters && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 md:hidden">
