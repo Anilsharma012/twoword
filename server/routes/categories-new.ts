@@ -312,10 +312,33 @@ export const getAllCategories: RequestHandler = async (req, res) => {
 export const createCategory: RequestHandler = async (req, res) => {
   try {
     const db = getDatabase();
-    const { name, iconUrl, sortOrder, isActive = true } = req.body;
+
+    // Backward-compatible payload parsing
+    const raw = req.body || {};
+    const name: string | undefined = (raw.name || "").toString();
+    const iconUrlRaw: any = raw.iconUrl ?? raw.icon; // accept legacy 'icon'
+    const sortOrderRaw: any = raw.sortOrder ?? raw.order; // accept legacy 'order'
+    const isActiveRaw: any = raw.isActive ?? raw.active; // accept legacy 'active'
+
+    // Normalize types
+    const iconUrl: string | undefined =
+      typeof iconUrlRaw === "string" ? iconUrlRaw : undefined;
+    const sortOrder: number | undefined =
+      typeof sortOrderRaw === "number"
+        ? sortOrderRaw
+        : typeof sortOrderRaw === "string"
+        ? parseInt(sortOrderRaw, 10)
+        : undefined;
+    const isActive: boolean = Boolean(
+      typeof isActiveRaw === "boolean"
+        ? isActiveRaw
+        : typeof isActiveRaw === "string"
+        ? isActiveRaw.toLowerCase() !== "false"
+        : true,
+    );
 
     // Validate required fields
-    if (!name || !iconUrl || typeof sortOrder !== "number") {
+    if (!name || !iconUrl || !Number.isFinite(sortOrder as number)) {
       return res.status(400).json({
         success: false,
         error: "Missing required fields: name, iconUrl, sortOrder",
@@ -329,7 +352,7 @@ export const createCategory: RequestHandler = async (req, res) => {
       name: name.trim(),
       slug,
       iconUrl: iconUrl.trim(),
-      sortOrder,
+      sortOrder: sortOrder as number,
       isActive,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -363,7 +386,6 @@ export const updateCategory: RequestHandler = async (req, res) => {
   try {
     const db = getDatabase();
     const { id } = req.params;
-    const { name, iconUrl, sortOrder, isActive } = req.body;
 
     if (!ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -372,19 +394,41 @@ export const updateCategory: RequestHandler = async (req, res) => {
       });
     }
 
-    // Build update object
+    const raw = req.body || {};
+
+    // Build update object with backward compatibility for legacy fields
     const updateData: any = {
       updatedAt: new Date(),
     };
 
-    if (name !== undefined) {
+    if (raw.name !== undefined) {
+      const name = String(raw.name);
       updateData.name = name.trim();
       // Regenerate slug if name changed
       updateData.slug = await ensureUniqueSlug(db, name, id);
     }
-    if (iconUrl !== undefined) updateData.iconUrl = iconUrl.trim();
-    if (sortOrder !== undefined) updateData.sortOrder = sortOrder;
-    if (isActive !== undefined) updateData.isActive = isActive;
+
+    const iconUrlRaw = raw.iconUrl ?? raw.icon; // accept legacy 'icon'
+    if (iconUrlRaw !== undefined) {
+      updateData.iconUrl = String(iconUrlRaw).trim();
+    }
+
+    const sortOrderRaw = raw.sortOrder ?? raw.order; // accept legacy 'order'
+    if (sortOrderRaw !== undefined) {
+      updateData.sortOrder =
+        typeof sortOrderRaw === "number"
+          ? sortOrderRaw
+          : parseInt(String(sortOrderRaw), 10);
+    }
+
+    const isActiveRaw = raw.isActive ?? raw.active; // accept legacy 'active'
+    if (isActiveRaw !== undefined) {
+      updateData.isActive = Boolean(
+        typeof isActiveRaw === "boolean"
+          ? isActiveRaw
+          : String(isActiveRaw).toLowerCase() !== "false",
+      );
+    }
 
     const result = await db
       .collection("categories")
