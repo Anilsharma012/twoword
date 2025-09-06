@@ -23,13 +23,13 @@ export const useUnreadCount = () => {
           setUnreadCount(0);
         }
       } catch (error: any) {
-        // Gracefully handle HTTP 404 by treating as zero unread
-        const msg = String(error?.message || "");
-        if (msg.includes("HTTP 404")) {
+        // Gracefully handle common transient issues by treating as zero unread
+        const msg = String(error?.message || "").toLowerCase();
+        if (msg.includes("http 404") || msg.includes("failed to fetch") || msg.includes("timeout") || msg.includes("network")) {
           if (mounted) setUnreadCount(0);
           return;
         }
-        // Log concise error for diagnostics (non-404)
+        // Log concise error for unexpected cases
         console.error("Error fetching unread count:", error?.message || error);
       }
     };
