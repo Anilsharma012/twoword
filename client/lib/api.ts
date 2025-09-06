@@ -186,20 +186,25 @@ export const apiRequest = async (
 
     clearTimeout(timeoutId);
 
-    let responseData: any;
-    if (response.headers.get("content-type")?.includes("application/json")) {
-      responseData = await response.json();
-    } else {
-      const t = await response.text();
-      responseData = t?.trim()
-        ? (() => {
-            try {
-              return JSON.parse(t);
-            } catch {
-              return { raw: t };
-            }
-          })()
-        : {};
+    // Safely parse response without consuming original body (prevents "body stream already read")
+    let responseData: any = {};
+    try {
+      const clone = response.clone();
+      const t = await clone.text();
+      if (t && t.trim()) {
+        try {
+          responseData = JSON.parse(t);
+        } catch {
+          responseData = { raw: t };
+        }
+      }
+    } catch (e) {
+      // As a fallback, try to read as JSON directly (may fail if already consumed)
+      try {
+        responseData = await response.json();
+      } catch {
+        responseData = {};
+      }
     }
 
     return { data: responseData, status: response.status, ok: response.ok };
