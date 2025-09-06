@@ -191,54 +191,38 @@ export default function EnhancedCategoryManagement() {
         isActive: newCategory.active ?? true,
       };
 
-      const response = await fetch("/api/admin/categories", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(categoryPayload),
-      });
+      // Use centralized api helper for creating category
+      const created = await api
+        .post("admin/categories", categoryPayload, token)
+        .catch((e: any) => {
+          throw e;
+        });
 
-      // If created, create subcategories separately
-
-      if (!response.ok) {
-        const text = await response.text();
-        let err = "Failed to create category";
-        try { err = JSON.parse(text).error || err; } catch (e) {}
-        setError(err);
+      const createdData = created?.data;
+      if (!createdData?.success) {
+        setError(createdData?.error || "Failed to create category");
         setUploading(false);
         return;
       }
 
-      const data = await response.json();
-      if (!data.success) {
-        setError(data.error || "Failed to create category");
-        setUploading(false);
-        return;
-      }
-
-      const createdCategory = data.data?.category || { _id: data.data?._id };
+      const createdCategory = createdData.data?.category || { _id: createdData.data?._id };
       const categoryId = createdCategory._id;
 
       // create subcategories via API
       for (let i = 0; i < processedSubcategories.length; i++) {
         const sub = processedSubcategories[i];
         try {
-          await fetch("/api/admin/subcategories", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
+          await api.post(
+            "admin/subcategories",
+            {
               categoryId,
               name: sub.name,
               iconUrl: iconUrl || "/placeholder.svg",
               sortOrder: i + 1,
               isActive: true,
-            }),
-          });
+            },
+            token,
+          );
         } catch (e) {
           console.warn("Failed to create subcategory", sub, e);
         }
@@ -248,9 +232,9 @@ export default function EnhancedCategoryManagement() {
       resetForm();
       setIsCreateDialogOpen(false);
       setUploading(false);
-    } catch (error) {
-      console.error("Error creating category:", error);
-      setError("Failed to create category");
+    } catch (error: any) {
+      console.error("Error creating category:", error?.message || error);
+      setError(error?.message || "Failed to create category");
     } finally {
       setUploading(false);
     }
