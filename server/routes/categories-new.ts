@@ -73,7 +73,7 @@ export const getCategories: RequestHandler = async (req, res) => {
     const categories = await db
       .collection("categories")
       .find(filter)
-      .sort({ sortOrder: 1, createdAt: 1 })
+      .sort({ sortOrder: 1, name: 1 })
       .toArray();
 
     let result = categories;
@@ -88,7 +88,7 @@ export const getCategories: RequestHandler = async (req, res) => {
               categoryId: category._id.toString(),
               ...(active === "true" ? { isActive: true } : {}),
             })
-            .sort({ sortOrder: 1, createdAt: 1 })
+            .sort({ sortOrder: 1, name: 1 })
             .toArray();
 
           return {
@@ -144,7 +144,7 @@ export const getCategoryBySlug: RequestHandler = async (req, res) => {
     const subcategories = await db
       .collection("subcategories")
       .find({ categoryId: category._id.toString(), isActive: true })
-      .sort({ sortOrder: 1, createdAt: 1 })
+      .sort({ sortOrder: 1, name: 1 })
       .toArray();
 
     const response: ApiResponse<any> = {
@@ -187,7 +187,7 @@ export const getSubcategoriesByCategory: RequestHandler = async (req, res) => {
     const subcategories = await db
       .collection("subcategories")
       .find({ categoryId: category._id.toString(), isActive: true })
-      .sort({ sortOrder: 1, createdAt: 1 })
+      .sort({ sortOrder: 1, name: 1 })
       .toArray();
 
     const response: ApiResponse<Subcategory[]> = {
@@ -249,7 +249,7 @@ export const getAllCategories: RequestHandler = async (req, res) => {
           subcategories = await db
             .collection("subcategories")
             .find({ categoryId: category._id.toString() })
-            .sort({ sortOrder: 1, createdAt: 1 })
+            .sort({ sortOrder: 1, name: 1 })
             .toArray();
         }
 
