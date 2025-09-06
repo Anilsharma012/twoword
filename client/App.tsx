@@ -77,6 +77,7 @@ import Step3Test from "./pages/Step3Test";
 import NetworkStatus from "./components/NetworkStatus";
 import AdsenseProvider from "./components/AdsenseProvider";
 import SubcategoriesPage from "./pages/SubcategoriesPage";
+import CategoryContentPage from "./pages/CategoryContentPage";
 
 const queryClient = new QueryClient();
 
