@@ -505,6 +505,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
             title: "Success",
             description: "Category order updated successfully",
           });
+          window.dispatchEvent(new Event('categories:updated'));
         }
       } catch (error) {
         console.error("Error updating sort order:", error);
