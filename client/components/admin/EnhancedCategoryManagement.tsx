@@ -102,32 +102,28 @@ export default function EnhancedCategoryManagement() {
       setLoading(true);
       setError("");
 
-      const response = await fetch("/api/admin/categories", {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get("admin/categories", token).catch((e: any) => {
+        throw e;
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          const list: Category[] = Array.isArray(data.data)
-            ? data.data
-            : Array.isArray(data.data?.categories)
-              ? data.data.categories
-              : [];
-          setCategories(
-            list.sort(
-              (a: Category, b: Category) => (a?.order ?? 0) - (b?.order ?? 0),
-            ),
-          );
-        } else {
-          setError(data.error || "Failed to fetch categories");
-        }
+      const data = res?.data;
+      if (data?.success) {
+        const list: Category[] = Array.isArray(data.data)
+          ? data.data
+          : Array.isArray(data.data?.categories)
+          ? data.data.categories
+          : [];
+        setCategories(
+          list.sort(
+            (a: Category, b: Category) => (a?.order ?? 0) - (b?.order ?? 0),
+          ),
+        );
       } else {
-        setError("Failed to fetch categories");
+        setError(data?.error || "Failed to fetch categories");
       }
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      setError("Failed to fetch categories");
+    } catch (error: any) {
+      console.error("Error fetching categories:", error?.message || error);
+      setError(error?.message || "Failed to fetch categories");
     } finally {
       setLoading(false);
     }
@@ -137,17 +133,25 @@ export default function EnhancedCategoryManagement() {
     const formData = new FormData();
     formData.append("icon", file);
 
-    const response = await fetch("/api/admin/categories/upload-icon", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
+    try {
+      const url = createApiUrl("admin/categories/upload-icon");
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+        credentials: "include",
+      });
 
-    const data = await response.json();
-    if (data.success) {
-      return data.data.iconUrl;
+      const data = await response.json();
+      if (data.success) {
+        return data.data.iconUrl;
+      }
+
+      throw new Error(data.error || "Failed to upload icon");
+    } catch (error: any) {
+      console.error("Error uploading icon:", error?.message || error);
+      throw error;
     }
-    throw new Error(data.error || "Failed to upload icon");
   };
 
   const createCategory = async () => {
