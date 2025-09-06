@@ -247,24 +247,15 @@ export default function EnhancedCategoryManagement() {
     if (!token) return;
 
     try {
-      const response = await fetch(`/api/admin/categories/${categoryId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(updates),
-      });
-
-      if (response.ok) {
+      const res = await api.put(`admin/categories/${categoryId}`, updates, token);
+      if (res && res.data && res.data.success) {
         fetchCategories();
       } else {
-        const data = await response.json();
-        setError(data.error || "Failed to update category");
+        setError(res?.data?.error || "Failed to update category");
       }
-    } catch (error) {
-      console.error("Error updating category:", error);
-      setError("Failed to update category");
+    } catch (error: any) {
+      console.error("Error updating category:", error?.message || error);
+      setError(error?.message || "Failed to update category");
     }
   };
 
