@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiRequest } from "@/lib/api";
 
-interface Subcategory { _id: string; name: string; slug: string; iconUrl?: string }
+interface Subcategory {
+  _id: string;
+  name: string;
+  slug: string;
+  iconUrl?: string;
+}
 
 export default function PublicCategoryPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -15,10 +20,12 @@ export default function PublicCategoryPage() {
     if (!slug) return;
     setLoading(true);
     try {
-      const res = await apiRequest(`categories/${slug}/subcategories`, { method: 'GET' });
+      const res = await apiRequest(`categories/${slug}/subcategories`, {
+        method: "GET",
+      });
       const list: any[] = (res?.data?.data || []) as any[];
       setSubs(Array.isArray(list) ? list : []);
-      setName(slug.replace(/-/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase()));
+      setName(slug.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase()));
     } finally {
       setLoading(false);
     }
@@ -26,10 +33,10 @@ export default function PublicCategoryPage() {
 
   useEffect(() => {
     const onUpdate = () => fetchData();
-    window.addEventListener('subcategories:updated', onUpdate);
+    window.addEventListener("subcategories:updated", onUpdate);
     fetchData();
-    return () => window.removeEventListener('subcategories:updated', onUpdate);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => window.removeEventListener("subcategories:updated", onUpdate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   const onClick = (sub: Subcategory) => {
@@ -46,8 +53,23 @@ export default function PublicCategoryPage() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {subs.map((s) => (
-            <button key={s._id || s.slug} className="border rounded-lg p-4 text-left hover:bg-gray-50" onClick={() => onClick(s)} aria-label={`Open ${s.name}`}>
-              <div className="text-2xl mb-2">{s.iconUrl ? <img src={s.iconUrl} alt="" className="w-8 h-8 inline-block"/> : '🏷️'}</div>
+            <button
+              key={s._id || s.slug}
+              className="border rounded-lg p-4 text-left hover:bg-gray-50"
+              onClick={() => onClick(s)}
+              aria-label={`Open ${s.name}`}
+            >
+              <div className="text-2xl mb-2">
+                {s.iconUrl ? (
+                  <img
+                    src={s.iconUrl}
+                    alt=""
+                    className="w-8 h-8 inline-block"
+                  />
+                ) : (
+                  "🏷️"
+                )}
+              </div>
               <div className="font-medium">{s.name}</div>
             </button>
           ))}

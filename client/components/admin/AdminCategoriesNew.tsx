@@ -187,7 +187,8 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
       } else {
         toast({
           title: "Error",
-          description: (data && (data.error || data.message)) || `HTTP ${resp.status}`,
+          description:
+            (data && (data.error || data.message)) || `HTTP ${resp.status}`,
           variant: "destructive",
         });
       }
@@ -233,7 +234,10 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
       });
 
       if (response.ok && response.data && response.data.success) {
-        handleInputChange("iconUrl", response.data.data.iconUrl || response.data.iconUrl);
+        handleInputChange(
+          "iconUrl",
+          response.data.data.iconUrl || response.data.iconUrl,
+        );
         toast({
           title: "Success",
           description: "Icon uploaded successfully",
@@ -241,7 +245,8 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
       } else {
         toast({
           title: "Error",
-          description: (response.data && response.data.error) || "Failed to upload icon",
+          description:
+            (response.data && response.data.error) || "Failed to upload icon",
           variant: "destructive",
         });
       }
@@ -286,9 +291,12 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
       }
 
       const { apiRequest } = await import("@/lib/api");
-      const resp = await apiRequest(url.replace(/^\/api\//, ''), {
+      const resp = await apiRequest(url.replace(/^\/api\//, ""), {
         method,
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(formData),
       });
 
@@ -299,7 +307,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
           title: "Success",
           description: `Category ${isEditing ? "updated" : "created"} successfully`,
         });
-        window.dispatchEvent(new Event('categories:updated'));
+        window.dispatchEvent(new Event("categories:updated"));
         fetchCategories(); // Refresh to get accurate data
         resetForm();
         setShowDialog(false);
@@ -365,7 +373,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
           title: "Success",
           description: "Category deleted successfully",
         });
-        window.dispatchEvent(new Event('categories:updated'));
+        window.dispatchEvent(new Event("categories:updated"));
         fetchCategories(); // Refresh pagination counts
       } else {
         // Revert optimistic update on error
@@ -474,7 +482,10 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         const { apiRequest } = await import("@/lib/api");
         const resp = await apiRequest("admin/categories/sort-order", {
           method: "PUT",
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({ updates }),
         });
 
@@ -493,7 +504,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
             title: "Success",
             description: "Category order updated successfully",
           });
-          window.dispatchEvent(new Event('categories:updated'));
+          window.dispatchEvent(new Event("categories:updated"));
         }
       } catch (error) {
         console.error("Error updating sort order:", error);

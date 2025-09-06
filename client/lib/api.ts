@@ -136,10 +136,12 @@ export const apiRequest = async (
   const url = createApiUrl(endpoint);
 
   // If running inside Builder preview without an explicit API base URL, warn and attempt relative requests
-  const isBuilderPreview = typeof window !== "undefined" && window.location.hostname.includes("projects.builder.codes");
+  const isBuilderPreview =
+    typeof window !== "undefined" &&
+    window.location.hostname.includes("projects.builder.codes");
   if (isBuilderPreview && !API_CONFIG.baseUrl) {
     console.warn(
-      "⚠️ Running inside Builder preview without VITE_API_BASE_URL. Attempting relative /api/* requests with reduced timeouts. For reliable operation set VITE_API_BASE_URL to your backend."
+      "⚠️ Running inside Builder preview without VITE_API_BASE_URL. Attempting relative /api/* requests with reduced timeouts. For reliable operation set VITE_API_BASE_URL to your backend.",
     );
   }
 
@@ -150,12 +152,24 @@ export const apiRequest = async (
     : API_CONFIG.timeout;
 
   // Extend timeout for uploads and category admin operations
-  const extendedEndpoints = ["upload", "categories", "subcategories", "create", "delete"];
+  const extendedEndpoints = [
+    "upload",
+    "categories",
+    "subcategories",
+    "create",
+    "delete",
+  ];
   const isExtended = extendedEndpoints.some((k) => endpoint.includes(k));
-  let finalTimeout = isExtended ? Math.max(effectiveTimeout, 45000) : effectiveTimeout;
+  let finalTimeout = isExtended
+    ? Math.max(effectiveTimeout, 45000)
+    : effectiveTimeout;
 
   // In Builder preview without a configured base URL, use a shorter timeout to fail fast
-  if (typeof window !== "undefined" && window.location.hostname.includes("projects.builder.codes") && !API_CONFIG.baseUrl) {
+  if (
+    typeof window !== "undefined" &&
+    window.location.hostname.includes("projects.builder.codes") &&
+    !API_CONFIG.baseUrl
+  ) {
     finalTimeout = Math.min(finalTimeout, 8000);
   }
 
@@ -186,7 +200,9 @@ export const apiRequest = async (
     // Build default headers but avoid forcing Content-Type for FormData or Blob bodies
     const defaultHeaders: Record<string, string> = {};
     const bodyIsFormData =
-      options.body && typeof FormData !== "undefined" && options.body instanceof FormData;
+      options.body &&
+      typeof FormData !== "undefined" &&
+      options.body instanceof FormData;
 
     if (!bodyIsFormData) {
       defaultHeaders["Content-Type"] = "application/json";
@@ -227,7 +243,11 @@ export const apiRequest = async (
     }
 
     if (!response.ok) {
-      console.warn('⚠️ API responded with error', { url, status: response.status, data: responseData });
+      console.warn("⚠️ API responded with error", {
+        url,
+        status: response.status,
+        data: responseData,
+      });
     }
 
     return { data: responseData, status: response.status, ok: response.ok };
@@ -236,9 +256,15 @@ export const apiRequest = async (
 
     const retriable =
       error?.name === "AbortError" ||
-      String(error?.message || "").toLowerCase().includes("timeout") ||
-      String(error?.message || "").toLowerCase().includes("failed to fetch") ||
-      String(error?.message || "").toLowerCase().includes("network error");
+      String(error?.message || "")
+        .toLowerCase()
+        .includes("timeout") ||
+      String(error?.message || "")
+        .toLowerCase()
+        .includes("failed to fetch") ||
+      String(error?.message || "")
+        .toLowerCase()
+        .includes("network error");
 
     if (retriable && retryCount < API_CONFIG.retryAttempts) {
       // backoff delay
@@ -267,9 +293,13 @@ export const adminApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!response.ok) throw new Error(
-      response.data?.error || response.data?.message || (typeof response.data?.raw === "string" ? response.data.raw : "") || `HTTP ${response.status}`
-    );
+    if (!response.ok)
+      throw new Error(
+        response.data?.error ||
+          response.data?.message ||
+          (typeof response.data?.raw === "string" ? response.data.raw : "") ||
+          `HTTP ${response.status}`,
+      );
     return response.data;
   },
 
@@ -278,9 +308,13 @@ export const adminApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!response.ok) throw new Error(
-      response.data?.error || response.data?.message || (typeof response.data?.raw === "string" ? response.data.raw : "") || `HTTP ${response.status}`
-    );
+    if (!response.ok)
+      throw new Error(
+        response.data?.error ||
+          response.data?.message ||
+          (typeof response.data?.raw === "string" ? response.data.raw : "") ||
+          `HTTP ${response.status}`,
+      );
     return response.data;
   },
 
@@ -289,9 +323,13 @@ export const adminApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!response.ok) throw new Error(
-      response.data?.error || response.data?.message || (typeof response.data?.raw === "string" ? response.data.raw : "") || `HTTP ${response.status}`
-    );
+    if (!response.ok)
+      throw new Error(
+        response.data?.error ||
+          response.data?.message ||
+          (typeof response.data?.raw === "string" ? response.data.raw : "") ||
+          `HTTP ${response.status}`,
+      );
     return response.data;
   },
 };
@@ -336,9 +374,13 @@ export const api = {
       ? { Authorization: `Bearer ${authToken}` }
       : {};
     const response = await apiRequest(endpoint, { method: "GET", headers });
-    if (!response.ok) throw new Error(
-      response.data?.error || response.data?.message || (typeof response.data?.raw === "string" ? response.data.raw : "") || `HTTP ${response.status}`
-    );
+    if (!response.ok)
+      throw new Error(
+        response.data?.error ||
+          response.data?.message ||
+          (typeof response.data?.raw === "string" ? response.data.raw : "") ||
+          `HTTP ${response.status}`,
+      );
     return { data: response.data };
   },
 
@@ -352,9 +394,13 @@ export const api = {
       body: data ? JSON.stringify(data) : undefined,
       headers,
     });
-    if (!response.ok) throw new Error(
-      response.data?.error || response.data?.message || (typeof response.data?.raw === "string" ? response.data.raw : "") || `HTTP ${response.status}`
-    );
+    if (!response.ok)
+      throw new Error(
+        response.data?.error ||
+          response.data?.message ||
+          (typeof response.data?.raw === "string" ? response.data.raw : "") ||
+          `HTTP ${response.status}`,
+      );
     return { data: response.data };
   },
 
@@ -368,9 +414,13 @@ export const api = {
       body: data ? JSON.stringify(data) : undefined,
       headers,
     });
-    if (!response.ok) throw new Error(
-      response.data?.error || response.data?.message || (typeof response.data?.raw === "string" ? response.data.raw : "") || `HTTP ${response.status}`
-    );
+    if (!response.ok)
+      throw new Error(
+        response.data?.error ||
+          response.data?.message ||
+          (typeof response.data?.raw === "string" ? response.data.raw : "") ||
+          `HTTP ${response.status}`,
+      );
     return { data: response.data };
   },
 
@@ -380,9 +430,13 @@ export const api = {
       ? { Authorization: `Bearer ${authToken}` }
       : {};
     const response = await apiRequest(endpoint, { method: "DELETE", headers });
-    if (!response.ok) throw new Error(
-      response.data?.error || response.data?.message || (typeof response.data?.raw === "string" ? response.data.raw : "") || `HTTP ${response.status}`
-    );
+    if (!response.ok)
+      throw new Error(
+        response.data?.error ||
+          response.data?.message ||
+          (typeof response.data?.raw === "string" ? response.data.raw : "") ||
+          `HTTP ${response.status}`,
+      );
     return { data: response.data };
   },
 };

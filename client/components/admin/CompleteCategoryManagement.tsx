@@ -184,11 +184,17 @@ export default function CompleteCategoryManagement() {
       const createdCategoryId = data.data?.category?._id || data.data?._id;
 
       // Create subcategories separately if provided
-      if (newCategory.subcategories && newCategory.subcategories.length && createdCategoryId) {
+      if (
+        newCategory.subcategories &&
+        newCategory.subcategories.length &&
+        createdCategoryId
+      ) {
         for (let i = 0; i < newCategory.subcategories.length; i++) {
           const sub = newCategory.subcategories[i];
           try {
-            await (await import("@/lib/api")).api.post(
+            await (
+              await import("@/lib/api")
+            ).api.post(
               "admin/subcategories",
               {
                 categoryId: createdCategoryId,
@@ -234,7 +240,11 @@ export default function CompleteCategoryManagement() {
       }
 
       const { api } = await import("@/lib/api");
-      const res = await api.put(`admin/categories/${categoryId}`, payload, token);
+      const res = await api.put(
+        `admin/categories/${categoryId}`,
+        payload,
+        token,
+      );
 
       if (res && res.data && res.data.success) {
         fetchCategories();

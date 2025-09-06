@@ -93,12 +93,12 @@ export default function EnhancedCategoryManagement() {
 
   useEffect(() => {
     const onUpdate = () => fetchCategories();
-    window.addEventListener('categories:updated', onUpdate);
-    window.addEventListener('subcategories:updated', onUpdate);
+    window.addEventListener("categories:updated", onUpdate);
+    window.addEventListener("subcategories:updated", onUpdate);
     fetchCategories();
     return () => {
-      window.removeEventListener('categories:updated', onUpdate);
-      window.removeEventListener('subcategories:updated', onUpdate);
+      window.removeEventListener("categories:updated", onUpdate);
+      window.removeEventListener("subcategories:updated", onUpdate);
     };
   }, [token]);
 
@@ -118,8 +118,8 @@ export default function EnhancedCategoryManagement() {
         const list: Category[] = Array.isArray(data.data)
           ? data.data
           : Array.isArray(data.data?.categories)
-          ? data.data.categories
-          : [];
+            ? data.data.categories
+            : [];
         setCategories(
           list.sort(
             (a: Category, b: Category) => (a?.order ?? 0) - (b?.order ?? 0),
@@ -211,11 +211,13 @@ export default function EnhancedCategoryManagement() {
         return;
       }
 
-      const createdCategory = createdData.data?.category || { _id: createdData.data?._id };
+      const createdCategory = createdData.data?.category || {
+        _id: createdData.data?._id,
+      };
       const categoryId = createdCategory._id;
 
       // notify frontend to refresh categories
-      window.dispatchEvent(new Event('categories:updated'));
+      window.dispatchEvent(new Event("categories:updated"));
 
       // create subcategories via API
       for (let i = 0; i < processedSubcategories.length; i++) {
@@ -256,7 +258,11 @@ export default function EnhancedCategoryManagement() {
     if (!token) return;
 
     try {
-      const res = await api.put(`admin/categories/${categoryId}`, updates, token);
+      const res = await api.put(
+        `admin/categories/${categoryId}`,
+        updates,
+        token,
+      );
       if (res && res.data && res.data.success) {
         fetchCategories();
       } else {
@@ -271,14 +277,20 @@ export default function EnhancedCategoryManagement() {
   const toggleCategoryStatus = async (categoryId: string, active: boolean) => {
     // Optimistic update with rollback on failure
     const prev = [...categories];
-    setCategories((cs) => cs.map((c) => (c._id === categoryId ? { ...c, active } : c)));
+    setCategories((cs) =>
+      cs.map((c) => (c._id === categoryId ? { ...c, active } : c)),
+    );
     try {
-      const res = await api.put(`admin/categories/${categoryId}`, { active }, token);
+      const res = await api.put(
+        `admin/categories/${categoryId}`,
+        { active },
+        token,
+      );
       if (!res?.data?.success) {
         setCategories(prev);
         throw new Error(res?.data?.error || "Failed to update status");
       }
-      window.dispatchEvent(new Event('categories:updated'));
+      window.dispatchEvent(new Event("categories:updated"));
     } catch (e: any) {
       setCategories(prev);
       console.error("Toggle status failed:", e?.message || e);
@@ -311,7 +323,7 @@ export default function EnhancedCategoryManagement() {
       const res = await api.delete(`admin/categories/${categoryId}`, token);
       if (res && res.data && res.data.success) {
         setCategories(categories.filter((cat) => cat._id !== categoryId));
-        window.dispatchEvent(new Event('categories:updated'));
+        window.dispatchEvent(new Event("categories:updated"));
       } else {
         setError(res?.data?.error || "Failed to delete category");
       }
@@ -498,7 +510,8 @@ export default function EnhancedCategoryManagement() {
           <CardContent>
             <div className="text-2xl font-bold">
               {categories.reduce(
-                (sum, cat) => sum + (cat.subcategories ? cat.subcategories.length : 0),
+                (sum, cat) =>
+                  sum + (cat.subcategories ? cat.subcategories.length : 0),
                 0,
               )}
             </div>
@@ -587,15 +600,22 @@ export default function EnhancedCategoryManagement() {
                       <button
                         className="text-[#C70000] underline text-sm"
                         aria-label={`Manage subcategories for ${category.name}`}
-                        onClick={() => (window.location.href = `/admin/ads/categories/${category._id}/subcategories`)}
+                        onClick={() =>
+                          (window.location.href = `/admin/ads/categories/${category._id}/subcategories`)
+                        }
                       >
-                        Manage Subcategories ({(category.subcategories || []).length})
+                        Manage Subcategories (
+                        {(category.subcategories || []).length})
                       </button>
                       <div className="pt-1">
                         {(category.subcategories || [])
                           .slice(0, 3)
                           .map((sub, subIndex) => (
-                            <Badge key={subIndex} variant="outline" className="mr-1 mb-1">
+                            <Badge
+                              key={subIndex}
+                              variant="outline"
+                              className="mr-1 mb-1"
+                            >
                               {sub.name} ({sub.count})
                             </Badge>
                           ))}
@@ -666,7 +686,14 @@ export default function EnhancedCategoryManagement() {
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button size="sm" variant="outline" aria-label="View category" onClick={() => { /* no-op view */ }}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        aria-label="View category"
+                        onClick={() => {
+                          /* no-op view */
+                        }}
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button
@@ -684,7 +711,11 @@ export default function EnhancedCategoryManagement() {
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                          if (window.confirm("Delete this category? This cannot be undone.")) {
+                          if (
+                            window.confirm(
+                              "Delete this category? This cannot be undone.",
+                            )
+                          ) {
                             deleteCategory(category._id);
                           }
                         }}

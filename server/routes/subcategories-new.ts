@@ -141,43 +141,69 @@ export const createSubcategory: RequestHandler = async (req, res) => {
     const db = getDatabase();
     const raw = req.body || {};
 
-    const categoryId: string = String(raw.categoryId || '').trim();
-    const name: string = String(raw.name || '').trim();
-    const providedSlugRaw: string | undefined = raw.slug ? String(raw.slug) : undefined;
+    const categoryId: string = String(raw.categoryId || "").trim();
+    const name: string = String(raw.name || "").trim();
+    const providedSlugRaw: string | undefined = raw.slug
+      ? String(raw.slug)
+      : undefined;
     const iconUrlRaw: string | undefined = raw.iconUrl ?? raw.icon;
     const orderRaw: any = raw.sortOrder ?? raw.order;
     const activeRaw: any = raw.isActive ?? raw.active;
 
     // Validate required fields
     if (!categoryId || !name) {
-      return res.status(400).json({ success: false, error: 'Missing required fields: categoryId, name' });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          error: "Missing required fields: categoryId, name",
+        });
     }
 
     // Validate category exists
-    const category = await db.collection('categories').findOne({ _id: new ObjectId(categoryId) });
+    const category = await db
+      .collection("categories")
+      .findOne({ _id: new ObjectId(categoryId) });
     if (!category) {
-      return res.status(400).json({ success: false, error: 'Parent category not found' });
+      return res
+        .status(400)
+        .json({ success: false, error: "Parent category not found" });
     }
 
     // Determine slug
-    const baseSlug = providedSlugRaw && providedSlugRaw.trim() ? providedSlugRaw.trim().toLowerCase() : generateSlug(name);
+    const baseSlug =
+      providedSlugRaw && providedSlugRaw.trim()
+        ? providedSlugRaw.trim().toLowerCase()
+        : generateSlug(name);
 
     // If slug explicitly provided and exists for this category, return 409
     if (providedSlugRaw) {
-      const duplicate = await db.collection('subcategories').findOne({ categoryId, slug: baseSlug });
+      const duplicate = await db
+        .collection("subcategories")
+        .findOne({ categoryId, slug: baseSlug });
       if (duplicate) {
-        return res.status(409).json({ success: false, error: 'Subcategory slug already exists in this category' });
+        return res
+          .status(409)
+          .json({
+            success: false,
+            error: "Subcategory slug already exists in this category",
+          });
       }
     }
 
     // Ensure uniqueness (auto-suffix -2, -3, ...)
     const slug = await ensureUniqueSlugInCategory(db, baseSlug, categoryId);
 
-    const iconUrl = typeof iconUrlRaw === 'string' ? iconUrlRaw.trim() : '';
-    const sortOrder = Number.isFinite(orderRaw) ? Number(orderRaw) : parseInt(String(orderRaw || '0'), 10) || 0;
-    const isActive = typeof activeRaw === 'boolean' ? activeRaw : String(activeRaw ?? 'true').toLowerCase() !== 'false';
+    const iconUrl = typeof iconUrlRaw === "string" ? iconUrlRaw.trim() : "";
+    const sortOrder = Number.isFinite(orderRaw)
+      ? Number(orderRaw)
+      : parseInt(String(orderRaw || "0"), 10) || 0;
+    const isActive =
+      typeof activeRaw === "boolean"
+        ? activeRaw
+        : String(activeRaw ?? "true").toLowerCase() !== "false";
 
-    const subcategoryData: Omit<Subcategory, '_id'> = {
+    const subcategoryData: Omit<Subcategory, "_id"> = {
       categoryId,
       name,
       slug,
@@ -188,20 +214,27 @@ export const createSubcategory: RequestHandler = async (req, res) => {
       updatedAt: new Date(),
     };
 
-    const result = await db.collection('subcategories').insertOne(subcategoryData);
+    const result = await db
+      .collection("subcategories")
+      .insertOne(subcategoryData);
 
     const response: ApiResponse<{ _id: string; subcategory: Subcategory }> = {
       success: true,
       data: {
         _id: result.insertedId.toString(),
-        subcategory: { ...subcategoryData, _id: result.insertedId.toString() } as Subcategory,
+        subcategory: {
+          ...subcategoryData,
+          _id: result.insertedId.toString(),
+        } as Subcategory,
       },
     };
 
     res.status(201).json(response);
   } catch (error) {
-    console.error('Error creating subcategory:', error);
-    res.status(500).json({ success: false, error: 'Failed to create subcategory' });
+    console.error("Error creating subcategory:", error);
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to create subcategory" });
   }
 };
 
@@ -219,20 +252,33 @@ export const updateSubcategory: RequestHandler = async (req, res) => {
     const slugRaw = raw.slug;
 
     if (!ObjectId.isValid(id)) {
-      return res.status(400).json({ success: false, error: 'Invalid subcategory ID' });
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid subcategory ID" });
     }
 
-    const currentSubcategory = await db.collection('subcategories').findOne({ _id: new ObjectId(id) });
+    const currentSubcategory = await db
+      .collection("subcategories")
+      .findOne({ _id: new ObjectId(id) });
     if (!currentSubcategory) {
-      return res.status(404).json({ success: false, error: 'Subcategory not found' });
+      return res
+        .status(404)
+        .json({ success: false, error: "Subcategory not found" });
     }
 
     const updateData: any = { updatedAt: new Date() };
 
-    if (categoryId !== undefined && categoryId !== currentSubcategory.categoryId) {
-      const category = await db.collection('categories').findOne({ _id: new ObjectId(categoryId) });
+    if (
+      categoryId !== undefined &&
+      categoryId !== currentSubcategory.categoryId
+    ) {
+      const category = await db
+        .collection("categories")
+        .findOne({ _id: new ObjectId(categoryId) });
       if (!category) {
-        return res.status(400).json({ success: false, error: 'Parent category not found' });
+        return res
+          .status(400)
+          .json({ success: false, error: "Parent category not found" });
       }
       updateData.categoryId = categoryId;
     }
@@ -242,36 +288,74 @@ export const updateSubcategory: RequestHandler = async (req, res) => {
     }
 
     if (slugRaw !== undefined || name !== undefined || updateData.categoryId) {
-      const targetCategoryId = updateData.categoryId || currentSubcategory.categoryId;
-      const base = slugRaw ? String(slugRaw).trim().toLowerCase() : (name ? String(name) : currentSubcategory.name);
+      const targetCategoryId =
+        updateData.categoryId || currentSubcategory.categoryId;
+      const base = slugRaw
+        ? String(slugRaw).trim().toLowerCase()
+        : name
+          ? String(name)
+          : currentSubcategory.name;
       const baseSlug = slugRaw ? base : generateSlug(base);
 
       if (slugRaw) {
-        const duplicate = await db.collection('subcategories').findOne({ categoryId: targetCategoryId, slug: baseSlug, _id: { $ne: new ObjectId(id) } });
+        const duplicate = await db
+          .collection("subcategories")
+          .findOne({
+            categoryId: targetCategoryId,
+            slug: baseSlug,
+            _id: { $ne: new ObjectId(id) },
+          });
         if (duplicate) {
-          return res.status(409).json({ success: false, error: 'Subcategory slug already exists in this category' });
+          return res
+            .status(409)
+            .json({
+              success: false,
+              error: "Subcategory slug already exists in this category",
+            });
         }
       }
 
-      updateData.slug = await ensureUniqueSlugInCategory(db, baseSlug, targetCategoryId, id);
+      updateData.slug = await ensureUniqueSlugInCategory(
+        db,
+        baseSlug,
+        targetCategoryId,
+        id,
+      );
     }
 
-    if (iconUrlRaw !== undefined) updateData.iconUrl = String(iconUrlRaw).trim();
-    if (sortOrderRaw !== undefined) updateData.sortOrder = parseInt(String(sortOrderRaw), 10);
-    if (isActiveRaw !== undefined) updateData.isActive = typeof isActiveRaw === 'boolean' ? isActiveRaw : String(isActiveRaw).toLowerCase() !== 'false';
+    if (iconUrlRaw !== undefined)
+      updateData.iconUrl = String(iconUrlRaw).trim();
+    if (sortOrderRaw !== undefined)
+      updateData.sortOrder = parseInt(String(sortOrderRaw), 10);
+    if (isActiveRaw !== undefined)
+      updateData.isActive =
+        typeof isActiveRaw === "boolean"
+          ? isActiveRaw
+          : String(isActiveRaw).toLowerCase() !== "false";
 
-    const result = await db.collection('subcategories').updateOne({ _id: new ObjectId(id) }, { $set: updateData });
+    const result = await db
+      .collection("subcategories")
+      .updateOne({ _id: new ObjectId(id) }, { $set: updateData });
     if (result.matchedCount === 0) {
-      return res.status(404).json({ success: false, error: 'Subcategory not found' });
+      return res
+        .status(404)
+        .json({ success: false, error: "Subcategory not found" });
     }
 
-    const updatedSubcategory = await db.collection('subcategories').findOne({ _id: new ObjectId(id) });
+    const updatedSubcategory = await db
+      .collection("subcategories")
+      .findOne({ _id: new ObjectId(id) });
 
-    const response: ApiResponse<{ subcategory: Subcategory }> = { success: true, data: { subcategory: updatedSubcategory as Subcategory } };
+    const response: ApiResponse<{ subcategory: Subcategory }> = {
+      success: true,
+      data: { subcategory: updatedSubcategory as Subcategory },
+    };
     res.json(response);
   } catch (error) {
-    console.error('Error updating subcategory:', error);
-    res.status(500).json({ success: false, error: 'Failed to update subcategory' });
+    console.error("Error updating subcategory:", error);
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to update subcategory" });
   }
 };
 
