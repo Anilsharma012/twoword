@@ -66,9 +66,9 @@ export default function AdminCategories({ token }: AdminCategoriesProps) {
           Authorization: `Bearer ${token}`,
         },
       });
-      const data = await response.json();
+      const { data } = await (await import('../lib/response-utils')).safeReadResponse(response);
 
-      if (data.success) {
+      if (data && data.success) {
         setCategories(data.data);
       }
     } catch (error) {
@@ -96,9 +96,9 @@ export default function AdminCategories({ token }: AdminCategoriesProps) {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      const { data } = await (await import('../lib/response-utils')).safeReadResponse(response);
 
-      if (data.success) {
+      if (data && data.success) {
         const createdCategoryId = data.data?.category?._id || data.data?._id;
         // create subcategories if any
         if (newCategory.subcategories && newCategory.subcategories.length && createdCategoryId) {
@@ -126,6 +126,7 @@ export default function AdminCategories({ token }: AdminCategoriesProps) {
         }
 
         fetchCategories();
+        window.dispatchEvent(new Event('categories:updated'));
         setNewCategory({
           name: "",
           slug: "",
@@ -167,11 +168,12 @@ export default function AdminCategories({ token }: AdminCategoriesProps) {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      const { data } = await (await import('../lib/response-utils')).safeReadResponse(response);
 
-      if (data.success) {
+      if (data && data.success) {
         fetchCategories();
         setEditingCategory(null);
+        window.dispatchEvent(new Event('categories:updated'));
       }
     } catch (error) {
       console.error("Error updating category:", error);
@@ -191,12 +193,13 @@ export default function AdminCategories({ token }: AdminCategoriesProps) {
         },
       });
 
-      const data = await response.json();
+      const { data } = await (await import('../lib/response-utils')).safeReadResponse(response);
 
-      if (data.success) {
+      if (data && data.success) {
         fetchCategories();
+        window.dispatchEvent(new Event('categories:updated'));
       } else {
-        alert(data.error || "Failed to delete category");
+        alert((data && data.error) || "Failed to delete category");
       }
     } catch (error) {
       console.error("Error deleting category:", error);
