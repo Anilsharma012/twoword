@@ -152,7 +152,12 @@ export const apiRequest = async (
   // Extend timeout for uploads and category admin operations
   const extendedEndpoints = ["upload", "categories", "subcategories", "create", "delete"];
   const isExtended = extendedEndpoints.some((k) => endpoint.includes(k));
-  const finalTimeout = isExtended ? Math.max(effectiveTimeout, 45000) : effectiveTimeout;
+  let finalTimeout = isExtended ? Math.max(effectiveTimeout, 45000) : effectiveTimeout;
+
+  // In Builder preview without a configured base URL, use a shorter timeout to fail fast
+  if (typeof window !== "undefined" && window.location.hostname.includes("projects.builder.codes") && !API_CONFIG.baseUrl) {
+    finalTimeout = Math.min(finalTimeout, 8000);
+  }
 
   const timeoutId = setTimeout(() => {
     try {
