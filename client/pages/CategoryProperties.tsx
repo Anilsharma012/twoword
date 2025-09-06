@@ -91,7 +91,14 @@ export default function CategoryProperties() {
   useEffect(() => {
     fetchCategoryData();
     fetchProperties();
+    fetchSubcategories();
   }, [category, subcategory, slug]);
+
+  useEffect(() => {
+    const onSubUpdate = () => fetchSubcategories();
+    window.addEventListener("subcategories:updated", onSubUpdate);
+    return () => window.removeEventListener("subcategories:updated", onSubUpdate);
+  }, []);
 
   useEffect(() => {
     fetchProperties();
