@@ -207,6 +207,9 @@ export default function EnhancedCategoryManagement() {
       const createdCategory = createdData.data?.category || { _id: createdData.data?._id };
       const categoryId = createdCategory._id;
 
+      // notify frontend to refresh categories
+      window.dispatchEvent(new Event('categories:updated'));
+
       // create subcategories via API
       for (let i = 0; i < processedSubcategories.length; i++) {
         const sub = processedSubcategories[i];
@@ -268,6 +271,7 @@ export default function EnhancedCategoryManagement() {
         setCategories(prev);
         throw new Error(res?.data?.error || "Failed to update status");
       }
+      window.dispatchEvent(new Event('categories:updated'));
     } catch (e: any) {
       setCategories(prev);
       console.error("Toggle status failed:", e?.message || e);
@@ -300,6 +304,7 @@ export default function EnhancedCategoryManagement() {
       const res = await api.delete(`admin/categories/${categoryId}`, token);
       if (res && res.data && res.data.success) {
         setCategories(categories.filter((cat) => cat._id !== categoryId));
+        window.dispatchEvent(new Event('categories:updated'));
       } else {
         setError(res?.data?.error || "Failed to delete category");
       }
