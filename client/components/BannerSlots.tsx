@@ -26,16 +26,16 @@ export default function BannerSlots({
   const fetchBanners = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/banners?active=true`);
-      const data = await response.json();
-
-      if (data.success && Array.isArray(data.data)) {
+      const { api } = await import("@/lib/api");
+      const res = await api.get("banners?active=true");
+      const data = res?.data;
+      if (data?.success && Array.isArray(data.data)) {
         setBanners(data.data);
       } else {
         setBanners([]);
       }
-    } catch (error) {
-      console.error("Error fetching banners:", error);
+    } catch (error: any) {
+      // Avoid noisy logs in production; treat as no banners
       setBanners([]);
     } finally {
       setLoading(false);
