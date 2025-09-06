@@ -178,7 +178,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
           Authorization: `Bearer ${token}`,
         },
       });
-      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).then(m => m.safeReadResponse(response));
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
 
       if (data && data.success) {
         setCategories(data.data.categories);
@@ -233,7 +233,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         body: uploadFormData,
       });
 
-      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).then(m => m.safeReadResponse(response));
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
 
       if (data && data.success) {
         handleInputChange("iconUrl", data.data.iconUrl);
@@ -297,7 +297,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         body: JSON.stringify(formData),
       });
 
-      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).then(m => m.safeReadResponse(response));
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
 
       if (data && data.success) {
         toast({
@@ -363,7 +363,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         },
       });
 
-      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).then(m => m.safeReadResponse(response));
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
 
       if (data && data.success) {
         toast({
@@ -412,7 +412,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         },
       );
 
-      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).then(m => m.safeReadResponse(response));
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
 
       if (!(data && data.success)) {
         // Revert optimistic update on error
@@ -488,7 +488,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
           body: JSON.stringify({ updates }),
         });
 
-        const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).then(m => m.safeReadResponse(response));
+        const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
 
         if (!(data && data.success)) {
           // Revert on error
