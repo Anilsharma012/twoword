@@ -140,7 +140,30 @@ export const apiRequest = async (
 ): Promise<{ data: any; status: number; ok: boolean }> => {
   const url = createApiUrl(endpoint);
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
+  // Allow some endpoints (chat unread count) a longer timeout
+  const effectiveTimeout = endpoint.includes("chat/unread-count")
+    ? Math.max(API_CONFIG.timeout, 30000)
+    : API_CONFIG.timeout;
+
+  const timeoutId = setTimeout(() => {
+    try {
+      // Abort with a reason when supported for better diagnostics
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      if (typeof controller.abort === 'function') {
+        try {
+          // some browsers support abort with reason
+          controller.abort(new Error('timeout'));
+        } catch {
+          controller.abort();
+        }
+      } else {
+        controller.abort();
+      }
+    } catch (e) {
+      // swallow
+    }
+  }, effectiveTimeout);
 
   try {
     const defaultHeaders: Record<string, string> = {
@@ -302,4 +325,3 @@ export const api = {
     return { data: response.data };
   },
 };
-
