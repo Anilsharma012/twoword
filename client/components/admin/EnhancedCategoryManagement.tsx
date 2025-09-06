@@ -142,12 +142,12 @@ export default function EnhancedCategoryManagement() {
         credentials: "include",
       });
 
-      const data = await response.json();
-      if (data.success) {
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).then(m => m.safeReadResponse(response));
+      if (data && data.success) {
         return data.data.iconUrl;
       }
 
-      throw new Error(data.error || "Failed to upload icon");
+      throw new Error((data && data.error) || "Failed to upload icon");
     } catch (error: any) {
       console.error("Error uploading icon:", error?.message || error);
       throw error;
