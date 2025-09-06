@@ -138,17 +138,17 @@ export default function CompleteCategoryManagement() {
     const formData = new FormData();
     formData.append("icon", file);
 
-    const response = await fetch("/api/admin/categories/upload-icon", {
+    const { apiRequest } = await import("@/lib/api");
+    const response = await apiRequest("admin/categories/upload-icon", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
       body: formData,
+      headers: { Authorization: `Bearer ${token}` },
     });
 
-    const data = await response.json();
-    if (data.success) {
-      return data.data.iconUrl;
+    if (response.ok && response.data && response.data.success) {
+      return response.data.data.iconUrl || response.data.iconUrl;
     }
-    throw new Error(data.error || "Failed to upload icon");
+    throw new Error(response.data?.error || "Failed to upload icon");
   };
 
   const createCategory = async () => {
@@ -171,26 +171,11 @@ export default function CompleteCategoryManagement() {
         isActive: newCategory.active ?? true,
       };
 
-      const response = await fetch("/api/admin/categories", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      const { api } = await import("@/lib/api");
+      const result = await api.post("admin/categories", payload, token);
 
-      if (!response.ok) {
-        const text = await response.text();
-        let err = "Failed to create category";
-        try { err = JSON.parse(text).error || err; } catch (e) {}
-        setError(err);
-        setUploading(false);
-        return;
-      }
-
-      const data = await response.json();
-      if (!data.success) {
+      const data = result?.data;
+      if (!result || !data || !data.success) {
         setError(data.error || "Failed to create category");
         setUploading(false);
         return;
@@ -199,24 +184,27 @@ export default function CompleteCategoryManagement() {
       const createdCategoryId = data.data?.category?._id || data.data?._id;
 
       // Create subcategories separately if provided
-      if (newCategory.subcategories && newCategory.subcategories.length && createdCategoryId) {
+      if (
+        newCategory.subcategories &&
+        newCategory.subcategories.length &&
+        createdCategoryId
+      ) {
         for (let i = 0; i < newCategory.subcategories.length; i++) {
           const sub = newCategory.subcategories[i];
           try {
-            await fetch("/api/admin/subcategories", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
+            await (
+              await import("@/lib/api")
+            ).api.post(
+              "admin/subcategories",
+              {
                 categoryId: createdCategoryId,
                 name: sub.name,
                 iconUrl: iconUrl || "/placeholder.svg",
                 sortOrder: i + 1,
                 isActive: true,
-              }),
-            });
+              },
+              token,
+            );
           } catch (e) {
             console.warn("Failed to create subcategory", sub, e);
           }
@@ -251,20 +239,17 @@ export default function CompleteCategoryManagement() {
         delete payload.order;
       }
 
-      const response = await fetch(`/api/admin/categories/${categoryId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      const { api } = await import("@/lib/api");
+      const res = await api.put(
+        `admin/categories/${categoryId}`,
+        payload,
+        token,
+      );
 
-      if (response.ok) {
+      if (res && res.data && res.data.success) {
         fetchCategories();
       } else {
-        const data = await response.json();
-        setError(data.error || "Failed to update category");
+        setError(res?.data?.error || "Failed to update category");
       }
     } catch (error) {
       console.error("Error updating category:", error);
@@ -303,16 +288,13 @@ export default function CompleteCategoryManagement() {
       return;
 
     try {
-      const response = await fetch(`/api/admin/categories/${categoryId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { api } = await import("@/lib/api");
+      const res = await api.delete(`admin/categories/${categoryId}`, token);
 
-      if (response.ok) {
+      if (res && res.data && res.data.success) {
         setCategories(categories.filter((cat) => cat._id !== categoryId));
       } else {
-        const data = await response.json();
-        setError(data.error || "Failed to delete category");
+        setError(res?.data?.error || "Failed to delete category");
       }
     } catch (error) {
       console.error("Error deleting category:", error);

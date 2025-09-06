@@ -8,12 +8,15 @@ import multer from "multer";
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 1 * 1024 * 1024 }, // 1MB limit for icons
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit for icons
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
+    if (file && file.mimetype && file.mimetype.startsWith("image/")) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files are allowed"));
+      // Provide a clear validation error that multer passes to the route
+      const e: any = new Error("Only image files are allowed (image/*)");
+      e.code = "INVALID_FILE_TYPE";
+      cb(e);
     }
   },
 });
@@ -206,7 +209,12 @@ export const getSubcategoriesByCategory: RequestHandler = async (req, res) => {
 export const getAllCategories: RequestHandler = async (req, res) => {
   try {
     const db = getDatabase();
-    const { search = "", page = "1", limit = "10", withSub = "false" } = req.query;
+    const {
+      search = "",
+      page = "1",
+      limit = "10",
+      withSub = "false",
+    } = req.query;
 
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
@@ -254,14 +262,18 @@ export const getAllCategories: RequestHandler = async (req, res) => {
 
         // Count properties linked to this category
         // Match by propertyType === category.slug OR subCategory in subcategory slugs
-        const subSlugs = (subcategories || []).map((s: any) => s.slug).filter(Boolean);
+        const subSlugs = (subcategories || [])
+          .map((s: any) => s.slug)
+          .filter(Boolean);
         const propFilter: any = {
           $or: [{ propertyType: category.slug }],
         };
         if (subSlugs.length > 0) {
           propFilter.$or.push({ subCategory: { $in: subSlugs } });
         }
-        const propertiesCount = await db.collection("properties").countDocuments(propFilter);
+        const propertiesCount = await db
+          .collection("properties")
+          .countDocuments(propFilter);
 
         return {
           ...category,
@@ -327,14 +339,14 @@ export const createCategory: RequestHandler = async (req, res) => {
       typeof sortOrderRaw === "number"
         ? sortOrderRaw
         : typeof sortOrderRaw === "string"
-        ? parseInt(sortOrderRaw, 10)
-        : undefined;
+          ? parseInt(sortOrderRaw, 10)
+          : undefined;
     const isActive: boolean = Boolean(
       typeof isActiveRaw === "boolean"
         ? isActiveRaw
         : typeof isActiveRaw === "string"
-        ? isActiveRaw.toLowerCase() !== "false"
-        : true,
+          ? isActiveRaw.toLowerCase() !== "false"
+          : true,
     );
 
     // Validate required fields

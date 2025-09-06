@@ -134,11 +134,44 @@ export const apiRequest = async (
   retryCount = 0,
 ): Promise<{ data: any; status: number; ok: boolean }> => {
   const url = createApiUrl(endpoint);
+
+  // If running inside Builder preview without an explicit API base URL, warn and attempt relative requests
+  const isBuilderPreview =
+    typeof window !== "undefined" &&
+    window.location.hostname.includes("projects.builder.codes");
+  if (isBuilderPreview && !API_CONFIG.baseUrl) {
+    console.warn(
+      "⚠️ Running inside Builder preview without VITE_API_BASE_URL. Attempting relative /api/* requests with reduced timeouts. For reliable operation set VITE_API_BASE_URL to your backend.",
+    );
+  }
+
   const controller = new AbortController();
   // Allow some endpoints (chat unread count) a longer timeout
   const effectiveTimeout = endpoint.includes("chat/unread-count")
     ? Math.max(API_CONFIG.timeout, 30000)
     : API_CONFIG.timeout;
+
+  // Extend timeout for uploads and category admin operations
+  const extendedEndpoints = [
+    "upload",
+    "categories",
+    "subcategories",
+    "create",
+    "delete",
+  ];
+  const isExtended = extendedEndpoints.some((k) => endpoint.includes(k));
+  let finalTimeout = isExtended
+    ? Math.max(effectiveTimeout, 45000)
+    : effectiveTimeout;
+
+  // In Builder preview without a configured base URL, use a shorter timeout to fail fast
+  if (
+    typeof window !== "undefined" &&
+    window.location.hostname.includes("projects.builder.codes") &&
+    !API_CONFIG.baseUrl
+  ) {
+    finalTimeout = Math.min(finalTimeout, 8000);
+  }
 
   const timeoutId = setTimeout(() => {
     try {
@@ -158,14 +191,23 @@ export const apiRequest = async (
     } catch (e) {
       // swallow
     }
-  }, effectiveTimeout);
+  }, finalTimeout);
 
   try {
-    const defaultHeaders: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
     const callerHeaders = (options.headers as Record<string, string>) ?? {};
     const stored = getStoredToken();
+
+    // Build default headers but avoid forcing Content-Type for FormData or Blob bodies
+    const defaultHeaders: Record<string, string> = {};
+    const bodyIsFormData =
+      options.body &&
+      typeof FormData !== "undefined" &&
+      options.body instanceof FormData;
+
+    if (!bodyIsFormData) {
+      defaultHeaders["Content-Type"] = "application/json";
+    }
+
     if (stored && !("Authorization" in callerHeaders)) {
       defaultHeaders.Authorization = `Bearer ${stored}`;
     }
@@ -179,27 +221,59 @@ export const apiRequest = async (
 
     clearTimeout(timeoutId);
 
-    let responseData: any;
-    if (response.headers.get("content-type")?.includes("application/json")) {
-      responseData = await response.json();
-    } else {
-      const t = await response.text();
-      responseData = t?.trim()
-        ? (() => {
-            try {
-              return JSON.parse(t);
-            } catch {
-              return { raw: t };
-            }
-          })()
-        : {};
+    // Safely parse response without consuming original body (prevents "body stream already read")
+    let responseData: any = {};
+    try {
+      const clone = response.clone();
+      const t = await clone.text();
+      if (t && t.trim()) {
+        try {
+          responseData = JSON.parse(t);
+        } catch {
+          responseData = { raw: t };
+        }
+      }
+    } catch (e) {
+      // As a fallback, try to read as JSON directly (may fail if already consumed)
+      try {
+        responseData = await response.json();
+      } catch {
+        responseData = {};
+      }
+    }
+
+    if (!response.ok) {
+      console.warn("⚠️ API responded with error", {
+        url,
+        status: response.status,
+        data: responseData,
+      });
     }
 
     return { data: responseData, status: response.status, ok: response.ok };
   } catch (error: any) {
     clearTimeout(timeoutId);
+
+    const retriable =
+      error?.name === "AbortError" ||
+      String(error?.message || "")
+        .toLowerCase()
+        .includes("timeout") ||
+      String(error?.message || "")
+        .toLowerCase()
+        .includes("failed to fetch") ||
+      String(error?.message || "")
+        .toLowerCase()
+        .includes("network error");
+
+    if (retriable && retryCount < API_CONFIG.retryAttempts) {
+      // backoff delay
+      await new Promise((r) => setTimeout(r, API_CONFIG.retryDelay));
+      return apiRequest(endpoint, options, retryCount + 1);
+    }
+
     if (error && error.name === "AbortError") {
-      throw new Error(`Request timeout after ${effectiveTimeout}ms`);
+      throw new Error(`Request timeout after ${finalTimeout}ms`);
     }
     if (error.message?.includes("Failed to fetch")) {
       throw new Error(`Network error: Unable to connect to server at ${url}`);
@@ -219,7 +293,13 @@ export const adminApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!response.ok) throw new Error(response.data.error || "Request failed");
+    if (!response.ok)
+      throw new Error(
+        response.data?.error ||
+          response.data?.message ||
+          (typeof response.data?.raw === "string" ? response.data.raw : "") ||
+          `HTTP ${response.status}`,
+      );
     return response.data;
   },
 
@@ -228,7 +308,13 @@ export const adminApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!response.ok) throw new Error(response.data.error || "Request failed");
+    if (!response.ok)
+      throw new Error(
+        response.data?.error ||
+          response.data?.message ||
+          (typeof response.data?.raw === "string" ? response.data.raw : "") ||
+          `HTTP ${response.status}`,
+      );
     return response.data;
   },
 
@@ -237,7 +323,13 @@ export const adminApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!response.ok) throw new Error(response.data.error || "Request failed");
+    if (!response.ok)
+      throw new Error(
+        response.data?.error ||
+          response.data?.message ||
+          (typeof response.data?.raw === "string" ? response.data.raw : "") ||
+          `HTTP ${response.status}`,
+      );
     return response.data;
   },
 };
@@ -282,7 +374,13 @@ export const api = {
       ? { Authorization: `Bearer ${authToken}` }
       : {};
     const response = await apiRequest(endpoint, { method: "GET", headers });
-    if (!response.ok) throw new Error(response.data.error || "Request failed");
+    if (!response.ok)
+      throw new Error(
+        response.data?.error ||
+          response.data?.message ||
+          (typeof response.data?.raw === "string" ? response.data.raw : "") ||
+          `HTTP ${response.status}`,
+      );
     return { data: response.data };
   },
 
@@ -296,7 +394,13 @@ export const api = {
       body: data ? JSON.stringify(data) : undefined,
       headers,
     });
-    if (!response.ok) throw new Error(response.data.error || "Request failed");
+    if (!response.ok)
+      throw new Error(
+        response.data?.error ||
+          response.data?.message ||
+          (typeof response.data?.raw === "string" ? response.data.raw : "") ||
+          `HTTP ${response.status}`,
+      );
     return { data: response.data };
   },
 
@@ -310,7 +414,13 @@ export const api = {
       body: data ? JSON.stringify(data) : undefined,
       headers,
     });
-    if (!response.ok) throw new Error(response.data.error || "Request failed");
+    if (!response.ok)
+      throw new Error(
+        response.data?.error ||
+          response.data?.message ||
+          (typeof response.data?.raw === "string" ? response.data.raw : "") ||
+          `HTTP ${response.status}`,
+      );
     return { data: response.data };
   },
 
@@ -320,7 +430,13 @@ export const api = {
       ? { Authorization: `Bearer ${authToken}` }
       : {};
     const response = await apiRequest(endpoint, { method: "DELETE", headers });
-    if (!response.ok) throw new Error(response.data.error || "Request failed");
+    if (!response.ok)
+      throw new Error(
+        response.data?.error ||
+          response.data?.message ||
+          (typeof response.data?.raw === "string" ? response.data.raw : "") ||
+          `HTTP ${response.status}`,
+      );
     return { data: response.data };
   },
 };

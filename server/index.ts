@@ -2060,16 +2060,56 @@ export function createServer() {
   app.get("/api/new-projects/banners", getPublicNewProjectBanners); // Public banners
 
   // Admin routes for projects
-  app.get("/api/admin/new-projects", authenticateToken, requireAdmin, getNewProjects);
-  app.post("/api/admin/new-projects", authenticateToken, requireAdmin, createNewProject);
-  app.put("/api/admin/new-projects/:id", authenticateToken, requireAdmin, updateNewProject);
-  app.delete("/api/admin/new-projects/:id", authenticateToken, requireAdmin, deleteNewProject);
+  app.get(
+    "/api/admin/new-projects",
+    authenticateToken,
+    requireAdmin,
+    getNewProjects,
+  );
+  app.post(
+    "/api/admin/new-projects",
+    authenticateToken,
+    requireAdmin,
+    createNewProject,
+  );
+  app.put(
+    "/api/admin/new-projects/:id",
+    authenticateToken,
+    requireAdmin,
+    updateNewProject,
+  );
+  app.delete(
+    "/api/admin/new-projects/:id",
+    authenticateToken,
+    requireAdmin,
+    deleteNewProject,
+  );
 
   // Admin routes for project banners
-  app.get("/api/admin/new-projects/banners", authenticateToken, requireAdmin, getNewProjectBanners);
-  app.post("/api/admin/new-projects/banners", authenticateToken, requireAdmin, createNewProjectBanner);
-  app.put("/api/admin/new-projects/banners/:id", authenticateToken, requireAdmin, updateNewProjectBanner);
-  app.delete("/api/admin/new-projects/banners/:id", authenticateToken, requireAdmin, deleteNewProjectBanner);
+  app.get(
+    "/api/admin/new-projects/banners",
+    authenticateToken,
+    requireAdmin,
+    getNewProjectBanners,
+  );
+  app.post(
+    "/api/admin/new-projects/banners",
+    authenticateToken,
+    requireAdmin,
+    createNewProjectBanner,
+  );
+  app.put(
+    "/api/admin/new-projects/banners/:id",
+    authenticateToken,
+    requireAdmin,
+    updateNewProjectBanner,
+  );
+  app.delete(
+    "/api/admin/new-projects/banners/:id",
+    authenticateToken,
+    requireAdmin,
+    deleteNewProjectBanner,
+  );
 
   // Initialization
   app.post("/api/new-projects/init", initializeNewProjects); // Public initialization
@@ -2092,6 +2132,75 @@ export function createServer() {
       environment: process.env.NODE_ENV || "development",
     });
   });
+
+  // Global error handler (returns JSON). Catches multer and other errors gracefully.
+  // Note: keep this after all routes are registered.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const multer = require("multer");
+
+    // Error-handling middleware
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    app.use((err: any, req: any, res: any, next: any) => {
+      console.error(
+        "⚠️ Global error handler:",
+        err && err.message ? err.message : err,
+      );
+
+      if (!res.headersSent) {
+        if (err && err.name === "MulterError") {
+          // Multer-specific errors (e.g., file too large)
+          return res
+            .status(400)
+            .json({
+              success: false,
+              error: err.message || "File upload error",
+            });
+        }
+
+        // Custom invalid file type error
+        if (err && err.code === "INVALID_FILE_TYPE") {
+          return res
+            .status(400)
+            .json({
+              success: false,
+              error: err.message || "Invalid file type",
+            });
+        }
+
+        // CORS errors and others
+        if (err && err.message && String(err.message).includes("CORS")) {
+          return res.status(403).json({ success: false, error: err.message });
+        }
+
+        return res
+          .status(500)
+          .json({
+            success: false,
+            error: err && err.message ? err.message : "Internal server error",
+          });
+      }
+      next(err);
+    });
+  } catch (e) {
+    // If require('multer') fails for any reason, still register a basic error handler
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    app.use((err: any, req: any, res: any, next: any) => {
+      console.error(
+        "⚠️ Global error handler (fallback):",
+        err && err.message ? err.message : err,
+      );
+      if (!res.headersSent) {
+        return res
+          .status(500)
+          .json({
+            success: false,
+            error: err && err.message ? err.message : "Internal server error",
+          });
+      }
+      next(err);
+    });
+  }
 
   return app;
 }

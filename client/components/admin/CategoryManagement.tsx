@@ -120,7 +120,9 @@ export default function CategoryManagement() {
       if (!response.ok) {
         const text = await response.text();
         let err = "Failed to create category";
-        try { err = JSON.parse(text).error || err; } catch (e) {}
+        try {
+          err = JSON.parse(text).error || err;
+        } catch (e) {}
         setError(err);
         return;
       }
@@ -180,24 +182,35 @@ export default function CategoryManagement() {
     try {
       const payload: any = {
         name: editingCategory.name,
-        iconUrl: (editingCategory as any).icon || editingCategory.iconUrl || "/placeholder.svg",
-        sortOrder: (editingCategory as any).order ?? (editingCategory as any).sortOrder ?? 999,
+        iconUrl:
+          (editingCategory as any).icon ||
+          editingCategory.iconUrl ||
+          "/placeholder.svg",
+        sortOrder:
+          (editingCategory as any).order ??
+          (editingCategory as any).sortOrder ??
+          999,
         isActive: (editingCategory as any).active ?? true,
       };
 
-      const response = await fetch(`/api/admin/categories/${editingCategory._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        `/api/admin/categories/${editingCategory._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      });
+      );
 
       if (!response.ok) {
         const text = await response.text();
         let err = "Failed to update category";
-        try { err = JSON.parse(text).error || err; } catch (e) {}
+        try {
+          err = JSON.parse(text).error || err;
+        } catch (e) {}
         setError(err);
         return;
       }
@@ -226,22 +239,15 @@ export default function CategoryManagement() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Read response body once to avoid stream already read error
-      let data;
-      try {
-        const responseText = await response.text();
-        data = responseText ? JSON.parse(responseText) : {};
-      } catch (parseError) {
-        console.warn("Could not parse response as JSON");
-        data = {};
-      }
+      const { safeReadResponse, getApiErrorMessage } = await import(
+        "../../lib/response-utils"
+      );
+      const { ok, status, data } = await safeReadResponse(response);
 
-      if (response.ok) {
+      if (ok) {
         setCategories(categories.filter((cat) => cat._id !== categoryId));
       } else {
-        setError(
-          data.error || `Failed to delete category (${response.status})`,
-        );
+        setError(getApiErrorMessage(data, status, "delete category"));
       }
     } catch (error) {
       console.error("Error deleting category:", error);
@@ -468,10 +474,17 @@ export default function CategoryManagement() {
             {editingCategory ? (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Category Name</label>
+                  <label className="block text-sm font-medium mb-2">
+                    Category Name
+                  </label>
                   <Input
                     value={editingCategory.name}
-                    onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                    onChange={(e) =>
+                      setEditingCategory({
+                        ...editingCategory,
+                        name: e.target.value,
+                      })
+                    }
                     placeholder="Enter category name..."
                   />
                 </div>
@@ -479,15 +492,27 @@ export default function CategoryManagement() {
                   <label className="block text-sm font-medium mb-2">Slug</label>
                   <Input
                     value={editingCategory.slug}
-                    onChange={(e) => setEditingCategory({ ...editingCategory, slug: e.target.value })}
+                    onChange={(e) =>
+                      setEditingCategory({
+                        ...editingCategory,
+                        slug: e.target.value,
+                      })
+                    }
                     placeholder="category-slug"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Description</label>
+                  <label className="block text-sm font-medium mb-2">
+                    Description
+                  </label>
                   <Textarea
                     value={editingCategory.description}
-                    onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
+                    onChange={(e) =>
+                      setEditingCategory({
+                        ...editingCategory,
+                        description: e.target.value,
+                      })
+                    }
                     placeholder="Enter category description..."
                     rows={3}
                   />
@@ -496,16 +521,30 @@ export default function CategoryManagement() {
                   <label className="block text-sm font-medium mb-2">Icon</label>
                   <Input
                     value={editingCategory.icon}
-                    onChange={(e) => setEditingCategory({ ...editingCategory, icon: e.target.value })}
+                    onChange={(e) =>
+                      setEditingCategory({
+                        ...editingCategory,
+                        icon: e.target.value,
+                      })
+                    }
                     placeholder="Icon name (e.g., Home, Building, etc.)"
                   />
                 </div>
 
                 <div className="flex justify-end space-x-2 pt-4">
-                  <Button variant="outline" onClick={() => { setEditingCategory(null); setIsEditDialogOpen(false); }}>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setEditingCategory(null);
+                      setIsEditDialogOpen(false);
+                    }}
+                  >
                     Cancel
                   </Button>
-                  <Button onClick={updateCategory} className="bg-[#C70000] hover:bg-[#A60000]">
+                  <Button
+                    onClick={updateCategory}
+                    className="bg-[#C70000] hover:bg-[#A60000]"
+                  >
                     Save Changes
                   </Button>
                 </div>
@@ -526,26 +565,43 @@ export default function CategoryManagement() {
               <div className="space-y-4">
                 <div>
                   <h4 className="font-semibold">{viewCategory.name}</h4>
-                  <p className="text-sm text-gray-600">{viewCategory.description}</p>
-                  <code className="text-xs bg-gray-100 px-1 rounded">{viewCategory.slug}</code>
+                  <p className="text-sm text-gray-600">
+                    {viewCategory.description}
+                  </p>
+                  <code className="text-xs bg-gray-100 px-1 rounded">
+                    {viewCategory.slug}
+                  </code>
                 </div>
                 <div>
                   <p className="text-sm font-medium">Subcategories</p>
                   <div className="space-y-2 mt-2">
                     {(viewCategory.subcategories || []).map((s, i) => (
-                      <div key={i} className="flex items-center justify-between">
+                      <div
+                        key={i}
+                        className="flex items-center justify-between"
+                      >
                         <div>{s.name}</div>
-                        <div className="text-xs text-gray-500">{s.count ?? 0}</div>
+                        <div className="text-xs text-gray-500">
+                          {s.count ?? 0}
+                        </div>
                       </div>
                     ))}
                     {(viewCategory.subcategories || []).length === 0 && (
-                      <div className="text-sm text-gray-500">No subcategories</div>
+                      <div className="text-sm text-gray-500">
+                        No subcategories
+                      </div>
                     )}
                   </div>
                 </div>
 
                 <div className="flex justify-end">
-                  <Button variant="outline" onClick={() => { setViewCategory(null); setIsViewDialogOpen(false); }}>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setViewCategory(null);
+                      setIsViewDialogOpen(false);
+                    }}
+                  >
                     Close
                   </Button>
                 </div>
@@ -609,7 +665,8 @@ export default function CategoryManagement() {
           <CardContent>
             <div className="text-2xl font-bold">
               {categories.reduce(
-                (sum, cat) => sum + (cat.subcategories ? cat.subcategories.length : 0),
+                (sum, cat) =>
+                  sum + (cat.subcategories ? cat.subcategories.length : 0),
                 0,
               )}
             </div>
@@ -666,15 +723,17 @@ export default function CategoryManagement() {
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      {(category.subcategories || []).slice(0, 3).map((sub, index) => (
-                        <Badge
-                          key={index}
-                          variant="outline"
-                          className="mr-1 mb-1"
-                        >
-                          {sub.name} ({sub.count})
-                        </Badge>
-                      ))}
+                      {(category.subcategories || [])
+                        .slice(0, 3)
+                        .map((sub, index) => (
+                          <Badge
+                            key={index}
+                            variant="outline"
+                            className="mr-1 mb-1"
+                          >
+                            {sub.name} ({sub.count})
+                          </Badge>
+                        ))}
                       {(category.subcategories || []).length > 3 && (
                         <Badge variant="outline">
                           +{(category.subcategories || []).length - 3} more
@@ -700,10 +759,24 @@ export default function CategoryManagement() {
                   <TableCell>{category.order ?? 0}</TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button size="sm" variant="outline" onClick={() => { setViewCategory(category); setIsViewDialogOpen(true); }}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setViewCategory(category);
+                          setIsViewDialogOpen(true);
+                        }}
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => { setEditingCategory(category); setIsEditDialogOpen(true); }}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setEditingCategory(category);
+                          setIsEditDialogOpen(true);
+                        }}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
