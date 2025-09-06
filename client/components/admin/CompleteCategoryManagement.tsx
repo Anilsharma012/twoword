@@ -171,26 +171,11 @@ export default function CompleteCategoryManagement() {
         isActive: newCategory.active ?? true,
       };
 
-      const response = await fetch("/api/admin/categories", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      const { api } = await import("@/lib/api");
+      const result = await api.post("admin/categories", payload, token);
 
-      if (!response.ok) {
-        const text = await response.text();
-        let err = "Failed to create category";
-        try { err = JSON.parse(text).error || err; } catch (e) {}
-        setError(err);
-        setUploading(false);
-        return;
-      }
-
-      const data = await response.json();
-      if (!data.success) {
+      const data = result?.data;
+      if (!result || !data || !data.success) {
         setError(data.error || "Failed to create category");
         setUploading(false);
         return;
@@ -203,20 +188,17 @@ export default function CompleteCategoryManagement() {
         for (let i = 0; i < newCategory.subcategories.length; i++) {
           const sub = newCategory.subcategories[i];
           try {
-            await fetch("/api/admin/subcategories", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
+            await (await import("@/lib/api")).api.post(
+              "admin/subcategories",
+              {
                 categoryId: createdCategoryId,
                 name: sub.name,
                 iconUrl: iconUrl || "/placeholder.svg",
                 sortOrder: i + 1,
                 isActive: true,
-              }),
-            });
+              },
+              token,
+            );
           } catch (e) {
             console.warn("Failed to create subcategory", sub, e);
           }
@@ -251,20 +233,13 @@ export default function CompleteCategoryManagement() {
         delete payload.order;
       }
 
-      const response = await fetch(`/api/admin/categories/${categoryId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      const { api } = await import("@/lib/api");
+      const res = await api.put(`admin/categories/${categoryId}`, payload, token);
 
-      if (response.ok) {
+      if (res && res.data && res.data.success) {
         fetchCategories();
       } else {
-        const data = await response.json();
-        setError(data.error || "Failed to update category");
+        setError(res?.data?.error || "Failed to update category");
       }
     } catch (error) {
       console.error("Error updating category:", error);
@@ -303,23 +278,13 @@ export default function CompleteCategoryManagement() {
       return;
 
     try {
-      const response = await fetch(`/api/admin/categories/${categoryId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { api } = await import("@/lib/api");
+      const res = await api.delete(`admin/categories/${categoryId}`, token);
 
-      const { safeReadResponse, getApiErrorMessage } = await import(
-        "../../lib/response-utils"
-      );
-      const { ok, status, data } = await safeReadResponse(response);
-
-      if (ok) {
+      if (res && res.data && res.data.success) {
         setCategories(categories.filter((cat) => cat._id !== categoryId));
       } else {
-        setError(
-          getApiErrorMessage(data, status, "delete category") ||
-            "Failed to delete category",
-        );
+        setError(res?.data?.error || "Failed to delete category");
       }
     } catch (error) {
       console.error("Error deleting category:", error);
