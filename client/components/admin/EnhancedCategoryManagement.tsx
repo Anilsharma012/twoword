@@ -286,20 +286,15 @@ export default function EnhancedCategoryManagement() {
       return;
 
     try {
-      const response = await fetch(`/api/admin/categories/${categoryId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.ok) {
+      const res = await api.delete(`admin/categories/${categoryId}`, token);
+      if (res && res.data && res.data.success) {
         setCategories(categories.filter((cat) => cat._id !== categoryId));
       } else {
-        const data = await response.json();
-        setError(data.error || "Failed to delete category");
+        setError(res?.data?.error || "Failed to delete category");
       }
-    } catch (error) {
-      console.error("Error deleting category:", error);
-      setError("Failed to delete category");
+    } catch (error: any) {
+      console.error("Error deleting category:", error?.message || error);
+      setError(error?.message || "Failed to delete category");
     }
   };
 
