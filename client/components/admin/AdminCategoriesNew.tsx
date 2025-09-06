@@ -371,6 +371,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
           title: "Success",
           description: "Category deleted successfully",
         });
+        window.dispatchEvent(new Event('categories:updated'));
         fetchCategories(); // Refresh pagination counts
       } else {
         // Revert optimistic update on error
