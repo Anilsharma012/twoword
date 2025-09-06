@@ -69,7 +69,12 @@ export default function AdminCategories({ token }: AdminCategoriesProps) {
       const { data } = await (await import('../lib/response-utils')).safeReadResponse(response);
 
       if (data && data.success) {
-        setCategories(data.data);
+        const list = Array.isArray(data.data)
+          ? data.data
+          : Array.isArray(data.data?.categories)
+          ? data.data.categories
+          : [];
+        setCategories(list);
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
