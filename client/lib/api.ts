@@ -39,7 +39,7 @@ const getApiBaseUrl = () => {
 
   if (typeof window !== "undefined") {
     const { protocol, hostname, port } = window.location;
-    console.log("📍 Current location:", {
+    console.log("��� Current location:", {
       protocol,
       hostname,
       port,
@@ -143,7 +143,7 @@ export const apiRequest = async (
   // Extend timeout for uploads and category admin operations
   const extendedEndpoints = ["upload", "categories", "subcategories", "create", "delete"];
   const isExtended = extendedEndpoints.some((k) => endpoint.includes(k));
-  const finalTimeout = isExtended ? Math.max(effectiveTimeout, 30000) : effectiveTimeout;
+  const finalTimeout = isExtended ? Math.max(effectiveTimeout, 45000) : effectiveTimeout;
 
   const timeoutId = setTimeout(() => {
     try {
