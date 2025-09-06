@@ -74,7 +74,13 @@ export default function AdminCategories({ token }: AdminCategoriesProps) {
           : Array.isArray(data.data?.categories)
           ? data.data.categories
           : [];
-        setCategories(list);
+        const normalized = list.map((cat: any) => ({
+          ...cat,
+          icon: cat.icon ?? cat.iconUrl,
+          order: cat.order ?? cat.sortOrder,
+          active: cat.active ?? cat.isActive,
+        }));
+        setCategories(normalized);
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
