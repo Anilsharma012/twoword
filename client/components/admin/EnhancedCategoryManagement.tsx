@@ -601,6 +601,7 @@ export default function EnhancedCategoryManagement() {
                         onCheckedChange={(checked) =>
                           toggleCategoryStatus(category._id, checked)
                         }
+                        aria-label={`Toggle status for ${category.name}`}
                       />
                       <Badge
                         variant={category.active ? "default" : "secondary"}
@@ -649,6 +650,9 @@ export default function EnhancedCategoryManagement() {
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
+                      <Button size="sm" variant="outline" aria-label="View category" onClick={() => { /* no-op view */ }}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       <Button
                         size="sm"
                         variant="outline"
