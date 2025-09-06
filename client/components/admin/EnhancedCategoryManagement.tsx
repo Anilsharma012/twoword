@@ -710,6 +710,14 @@ export default function EnhancedCategoryManagement() {
                       <Button
                         size="sm"
                         variant="outline"
+                        onClick={() => (window.location.href = `/admin/ads/categories/${category._id}/content`)}
+                        aria-label="Edit content"
+                      >
+                        Content
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => {
                           if (
                             window.confirm(
