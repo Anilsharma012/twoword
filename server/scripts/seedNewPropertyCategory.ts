@@ -12,7 +12,7 @@ async function run() {
   const name = "New Property";
 
   // Upsert category
-  const catResult = await categories.findOneAndUpdate(
+  await categories.findOneAndUpdate(
     { slug },
     {
       $setOnInsert: {
@@ -28,10 +28,12 @@ async function run() {
         active: true,
       },
     },
-    { upsert: true, returnDocument: "after" as const },
+    { upsert: true },
   );
 
-  const categoryId = (catResult.value as any)._id.toString();
+  const catDoc = await categories.findOne({ slug });
+  if (!catDoc) throw new Error("Failed to upsert category");
+  const categoryId = (catDoc as any)._id.toString();
 
   // Upsert category content
   const heroImages = [
