@@ -119,6 +119,26 @@ export default function CategoryProperties() {
     }
   };
 
+  const fetchSubcategories = async () => {
+    try {
+      if (!category || slug || subcategory) {
+        setSubcategories([]);
+        return;
+      }
+      const res = await fetch(`/api/categories/${category}/subcategories`, {
+        headers: { "Cache-Control": "no-cache" },
+      });
+      const data = await res.json();
+      if (data?.success && Array.isArray(data.data)) {
+        setSubcategories(data.data);
+      } else {
+        setSubcategories([]);
+      }
+    } catch (e) {
+      setSubcategories([]);
+    }
+  };
+
   const fetchProperties = async () => {
     try {
       setLoading(true);
