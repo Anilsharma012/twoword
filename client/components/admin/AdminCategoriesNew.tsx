@@ -178,16 +178,16 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
           Authorization: `Bearer ${token}`,
         },
       });
-      const data = await response.json();
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).then(m => m.safeReadResponse(response));
 
-      if (data.success) {
+      if (data && data.success) {
         setCategories(data.data.categories);
         setTotalPages(data.data.pagination.pages);
         setTotal(data.data.pagination.total);
       } else {
         toast({
           title: "Error",
-          description: data.error || "Failed to fetch categories",
+          description: (data && data.error) || "Failed to fetch categories",
           variant: "destructive",
         });
       }
