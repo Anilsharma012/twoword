@@ -138,17 +138,17 @@ export default function CompleteCategoryManagement() {
     const formData = new FormData();
     formData.append("icon", file);
 
-    const response = await fetch("/api/admin/categories/upload-icon", {
+    const { apiRequest } = await import("@/lib/api");
+    const response = await apiRequest("admin/categories/upload-icon", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
       body: formData,
+      headers: { Authorization: `Bearer ${token}` },
     });
 
-    const data = await response.json();
-    if (data.success) {
-      return data.data.iconUrl;
+    if (response.ok && response.data && response.data.success) {
+      return response.data.data.iconUrl || response.data.iconUrl;
     }
-    throw new Error(data.error || "Failed to upload icon");
+    throw new Error(response.data?.error || "Failed to upload icon");
   };
 
   const createCategory = async () => {
