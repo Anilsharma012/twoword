@@ -173,21 +173,21 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         ...(search && { search }),
       });
 
-      const response = await fetch(`/api/admin/categories?${params}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const { apiRequest } = await import("@/lib/api");
+      const resp = await apiRequest(`admin/categories?${params}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
       });
-      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
 
-      if (data && data.success) {
+      const data = resp.data as any;
+      if (resp.ok && data && data.success) {
         setCategories(data.data.categories);
         setTotalPages(data.data.pagination.pages);
         setTotal(data.data.pagination.total);
       } else {
         toast({
           title: "Error",
-          description: (data && data.error) || "Failed to fetch categories",
+          description: (data && (data.error || data.message)) || `HTTP ${resp.status}`,
           variant: "destructive",
         });
       }
@@ -285,18 +285,16 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         );
       }
 
-      const response = await fetch(url, {
+      const { apiRequest } = await import("@/lib/api");
+      const resp = await apiRequest(url.replace(/^\/api\//, ''), {
         method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
-      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
+      const data = resp.data as any;
 
-      if (data && data.success) {
+      if (resp.ok && data && data.success) {
         toast({
           title: "Success",
           description: `Category ${isEditing ? "updated" : "created"} successfully`,
@@ -354,16 +352,15 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
       const categoryToDelete = categories.find((c) => c._id === categoryId);
       setCategories((prev) => prev.filter((c) => c._id !== categoryId));
 
-      const response = await fetch(`/api/admin/categories/${categoryId}`, {
+      const { apiRequest } = await import("@/lib/api");
+      const resp = await apiRequest(`admin/categories/${categoryId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
+      const data = resp.data as any;
 
-      if (data && data.success) {
+      if (resp.ok && data && data.success) {
         toast({
           title: "Success",
           description: "Category deleted successfully",
@@ -401,19 +398,15 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         prev.map((c) => (c._id === category._id ? updatedCategory : c)),
       );
 
-      const response = await fetch(
-        `/api/admin/categories/${category._id}/toggle`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+      const { apiRequest } = await import("@/lib/api");
+      const resp = await apiRequest(`admin/categories/${category._id}/toggle`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
+      const data = resp.data as any;
 
-      if (!(data && data.success)) {
+      if (!(resp.ok && data && data.success)) {
         // Revert optimistic update on error
         setCategories((prev) =>
           prev.map((c) => (c._id === category._id ? category : c)),
@@ -478,18 +471,16 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
       }));
 
       try {
-        const response = await fetch("/api/admin/categories/sort-order", {
+        const { apiRequest } = await import("@/lib/api");
+        const resp = await apiRequest("admin/categories/sort-order", {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
           body: JSON.stringify({ updates }),
         });
 
-        const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
+        const data = resp.data as any;
 
-        if (!(data && data.success)) {
+        if (!(resp.ok && data && data.success)) {
           // Revert on error
           fetchCategories();
           toast({
