@@ -412,16 +412,16 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         },
       );
 
-      const data = await response.json();
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).then(m => m.safeReadResponse(response));
 
-      if (!data.success) {
+      if (!(data && data.success)) {
         // Revert optimistic update on error
         setCategories((prev) =>
           prev.map((c) => (c._id === category._id ? category : c)),
         );
         toast({
           title: "Error",
-          description: data.error || "Failed to update category",
+          description: (data && data.error) || "Failed to update category",
           variant: "destructive",
         });
       }
