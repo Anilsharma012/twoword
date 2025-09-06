@@ -300,7 +300,9 @@ export const api = {
       ? { Authorization: `Bearer ${authToken}` }
       : {};
     const response = await apiRequest(endpoint, { method: "GET", headers });
-    if (!response.ok) throw new Error(response.data.error || "Request failed");
+    if (!response.ok) throw new Error(
+      response.data?.error || response.data?.message || (typeof response.data?.raw === "string" ? response.data.raw : "") || `HTTP ${response.status}`
+    );
     return { data: response.data };
   },
 
