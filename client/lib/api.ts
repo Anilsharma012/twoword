@@ -203,8 +203,8 @@ export const apiRequest = async (
     return { data: responseData, status: response.status, ok: response.ok };
   } catch (error: any) {
     clearTimeout(timeoutId);
-    if (error.name === "AbortError") {
-      throw new Error(`Request timeout after ${API_CONFIG.timeout}ms`);
+    if (error && error.name === "AbortError") {
+      throw new Error(`Request timeout after ${effectiveTimeout}ms`);
     }
     if (error.message?.includes("Failed to fetch")) {
       throw new Error(`Network error: Unable to connect to server at ${url}`);
