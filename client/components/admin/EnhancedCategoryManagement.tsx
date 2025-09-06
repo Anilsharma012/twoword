@@ -134,19 +134,19 @@ export default function EnhancedCategoryManagement() {
     formData.append("icon", file);
 
     try {
-      const url = "/api/admin/categories/upload-icon"; // use relative path so proxy handles requests in preview
-      const response = await fetch(url, {
+      // Use centralized apiRequest so headers/timeouts are consistent and FormData is handled correctly
+      const { apiRequest } = await import("@/lib/api");
+      const response = await apiRequest("admin/categories/upload-icon", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
         body: formData,
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).safeReadResponse(response);
-      if (data && data.success) {
-        return data.data.iconUrl;
+      if (!response.ok) {
+        throw new Error(response.data?.error || "Failed to upload icon");
       }
 
-      throw new Error((data && data.error) || "Failed to upload icon");
+      return response.data?.data?.iconUrl || response.data?.iconUrl || "";
     } catch (error: any) {
       console.error("Error uploading icon:", error?.message || error);
       throw error;
