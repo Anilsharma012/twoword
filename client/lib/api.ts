@@ -140,6 +140,11 @@ export const apiRequest = async (
     ? Math.max(API_CONFIG.timeout, 30000)
     : API_CONFIG.timeout;
 
+  // Extend timeout for uploads and category admin operations
+  const extendedEndpoints = ["upload", "categories", "subcategories", "create", "delete"];
+  const isExtended = extendedEndpoints.some((k) => endpoint.includes(k));
+  const finalTimeout = isExtended ? Math.max(effectiveTimeout, 30000) : effectiveTimeout;
+
   const timeoutId = setTimeout(() => {
     try {
       // Abort with a reason when supported for better diagnostics
@@ -158,7 +163,7 @@ export const apiRequest = async (
     } catch (e) {
       // swallow
     }
-  }, effectiveTimeout);
+  }, finalTimeout);
 
   try {
     const callerHeaders = (options.headers as Record<string, string>) ?? {};
@@ -210,8 +215,21 @@ export const apiRequest = async (
     return { data: responseData, status: response.status, ok: response.ok };
   } catch (error: any) {
     clearTimeout(timeoutId);
+
+    const retriable =
+      error?.name === "AbortError" ||
+      String(error?.message || "").toLowerCase().includes("timeout") ||
+      String(error?.message || "").toLowerCase().includes("failed to fetch") ||
+      String(error?.message || "").toLowerCase().includes("network error");
+
+    if (retriable && retryCount < API_CONFIG.retryAttempts) {
+      // backoff delay
+      await new Promise((r) => setTimeout(r, API_CONFIG.retryDelay));
+      return apiRequest(endpoint, options, retryCount + 1);
+    }
+
     if (error && error.name === "AbortError") {
-      throw new Error(`Request timeout after ${effectiveTimeout}ms`);
+      throw new Error(`Request timeout after ${finalTimeout}ms`);
     }
     if (error.message?.includes("Failed to fetch")) {
       throw new Error(`Network error: Unable to connect to server at ${url}`);
