@@ -35,6 +35,11 @@ import {
   uploadCategoryIcon,
   handleIconUpload,
 } from "./routes/categories-new";
+import {
+  getAdminCategoryContent,
+  upsertAdminCategoryContent,
+  getPublicCategoryContent,
+} from "./routes/category-content";
 
 // Subcategory routes (new system)
 import {
