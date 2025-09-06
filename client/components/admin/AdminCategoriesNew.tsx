@@ -304,6 +304,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
           title: "Success",
           description: `Category ${isEditing ? "updated" : "created"} successfully`,
         });
+        window.dispatchEvent(new Event('categories:updated'));
         fetchCategories(); // Refresh to get accurate data
         resetForm();
         setShowDialog(false);
