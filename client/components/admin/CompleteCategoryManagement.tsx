@@ -308,11 +308,18 @@ export default function CompleteCategoryManagement() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.ok) {
+      const { safeReadResponse, getApiErrorMessage } = await import(
+        "../../lib/response-utils"
+      );
+      const { ok, status, data } = await safeReadResponse(response);
+
+      if (ok) {
         setCategories(categories.filter((cat) => cat._id !== categoryId));
       } else {
-        const data = await response.json();
-        setError(data.error || "Failed to delete category");
+        setError(
+          getApiErrorMessage(data, status, "delete category") ||
+            "Failed to delete category",
+        );
       }
     } catch (error) {
       console.error("Error deleting category:", error);
