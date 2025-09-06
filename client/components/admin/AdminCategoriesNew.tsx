@@ -297,9 +297,9 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      const { data, ok: respOk, status } = await (await import('../../lib/response-utils')).then(m => m.safeReadResponse(response));
 
-      if (data.success) {
+      if (data && data.success) {
         toast({
           title: "Success",
           description: `Category ${isEditing ? "updated" : "created"} successfully`,
@@ -319,7 +319,7 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
         toast({
           title: "Error",
           description:
-            data.error ||
+            (data && data.error) ||
             `Failed to ${isEditing ? "update" : "create"} category`,
           variant: "destructive",
         });
