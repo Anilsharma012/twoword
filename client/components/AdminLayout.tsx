@@ -276,6 +276,12 @@ export default function AdminLayout({
 }: AdminLayoutProps) {
   const { user, logout } = useAuth();
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<string[]>([
+    "dashboard",
+  ]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // Safety check
   if (!user) {
     return (
@@ -286,12 +292,6 @@ export default function AdminLayout({
       </div>
     );
   }
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<string[]>([
-    "dashboard",
-  ]);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   const toggleSection = (sectionId: string) => {
     setExpandedSections((prev) =>
       prev.includes(sectionId)
