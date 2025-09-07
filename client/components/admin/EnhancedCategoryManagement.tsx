@@ -614,16 +614,16 @@ export default function EnhancedCategoryManagement() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {category.icon ? (
+                    {(category.icon || (category as any).iconUrl) ? (
                       <div className="w-8 h-8 bg-red-50 border border-red-100 rounded-lg flex items-center justify-center">
-                        {category.icon.startsWith("http") ? (
+                        {(category.icon || (category as any).iconUrl).startsWith("http") ? (
                           <img
-                            src={category.icon}
+                            src={category.icon || (category as any).iconUrl}
                             alt="Category icon"
                             className="w-6 h-6 object-cover rounded"
                           />
                         ) : (
-                          <span className="text-lg">{category.icon}</span>
+                          <span className="text-lg">{category.icon || (category as any).iconUrl}</span>
                         )}
                       </div>
                     ) : (
