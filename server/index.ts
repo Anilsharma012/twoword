@@ -704,12 +704,23 @@ export function createServer() {
   app.get("/api/properties", getProperties);
   app.get("/api/properties/featured", getFeaturedProperties);
   app.get("/api/properties/:id", getPropertyById);
-  app.post(
-    "/api/properties",
-    authenticateToken,
-    upload.array("images", 10),
-    createProperty,
-  );
+  // Wrap upload to catch Multer errors (e.g., file too large) and respond gracefully
+  const imagesUpload = upload.array("images", 10);
+  app.post("/api/properties", authenticateToken, (req, res, next) => {
+    imagesUpload(req, res, (err: any) => {
+      if (err) {
+        const msg = String(err?.message || "");
+        if (msg.toLowerCase().includes("file too large") || err.name === "MulterError") {
+          return res.status(413).json({
+            success: false,
+            error: "One or more images are too large. Max 10MB per image.",
+          });
+        }
+        return next(err);
+      }
+      return createProperty(req as any, res as any, next as any);
+    });
+  });
 
   // User property management routes
   app.get("/api/user/properties", authenticateToken, getUserProperties);
