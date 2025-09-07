@@ -436,6 +436,11 @@ export default function EnhancedCategoryManagement() {
     const safeName = category.name || "";
     const safeDescription = category.description || "";
     const safeSearchTerm = searchTerm || "";
+
+    // Exclude special categories requested by admin
+    const excluded = ["other categories", "new property", "other category"]; // case-insensitive
+    if (excluded.includes(safeName.toLowerCase())) return false;
+
     const matchesSearch =
       safeName.toLowerCase().includes(safeSearchTerm.toLowerCase()) ||
       safeDescription.toLowerCase().includes(safeSearchTerm.toLowerCase());
