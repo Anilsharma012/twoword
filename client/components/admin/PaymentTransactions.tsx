@@ -32,12 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import {
   Dialog,
   DialogContent,
@@ -77,7 +72,8 @@ export default function PaymentTransactions() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<Transaction | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
@@ -122,9 +118,10 @@ export default function PaymentTransactions() {
           setError(data.error || "Failed to fetch transactions");
         }
       } else {
-        setError(`Failed to fetch transactions: ${response.status} ${response.statusText}`);
+        setError(
+          `Failed to fetch transactions: ${response.status} ${response.statusText}`,
+        );
       }
-
     } catch (error) {
       console.error("Error fetching transactions:", error);
       setError("Failed to fetch transactions");
@@ -136,55 +133,80 @@ export default function PaymentTransactions() {
   const getStatusIcon = (status: string) => {
     const normalized = status === "completed" ? "paid" : status;
     switch (normalized) {
-      case "paid": return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case "failed": return <XCircle className="h-4 w-4 text-red-600" />;
-      case "cancelled": return <XCircle className="h-4 w-4 text-gray-600" />;
-      case "pending": return <Clock className="h-4 w-4 text-yellow-600" />;
-      default: return <Clock className="h-4 w-4 text-gray-600" />;
+      case "paid":
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case "failed":
+        return <XCircle className="h-4 w-4 text-red-600" />;
+      case "cancelled":
+        return <XCircle className="h-4 w-4 text-gray-600" />;
+      case "pending":
+        return <Clock className="h-4 w-4 text-yellow-600" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-600" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     const normalized = status === "completed" ? "paid" : status;
     switch (normalized) {
-      case "paid": return "bg-green-100 text-green-800";
-      case "failed": return "bg-red-100 text-red-800";
-      case "cancelled": return "bg-gray-100 text-gray-800";
-      case "pending": return "bg-yellow-100 text-yellow-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "paid":
+        return "bg-green-100 text-green-800";
+      case "failed":
+        return "bg-red-100 text-red-800";
+      case "cancelled":
+        return "bg-gray-100 text-gray-800";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case "package_purchase": return "bg-blue-100 text-blue-800";
-      case "featured_upgrade": return "bg-purple-100 text-purple-800";
-      case "listing_fee": return "bg-orange-100 text-orange-800";
-      case "refund": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "package_purchase":
+        return "bg-blue-100 text-blue-800";
+      case "featured_upgrade":
+        return "bg-purple-100 text-purple-800";
+      case "listing_fee":
+        return "bg-orange-100 text-orange-800";
+      case "refund":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
-  const updateTransactionStatus = async (transactionId: string, status: "paid" | "failed" | "cancelled") => {
+  const updateTransactionStatus = async (
+    transactionId: string,
+    status: "paid" | "failed" | "cancelled",
+  ) => {
     if (!token) return;
 
     try {
-      const response = await fetch(`/api/admin/transactions/${transactionId}/status`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        `/api/admin/transactions/${transactionId}/status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status }),
         },
-        body: JSON.stringify({ status }),
-      });
+      );
 
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
           // Update local state
-          setTransactions(transactions.map(t =>
-            t._id === transactionId ? { ...t, status, updatedAt: new Date().toISOString() } : t
-          ));
+          setTransactions(
+            transactions.map((t) =>
+              t._id === transactionId
+                ? { ...t, status, updatedAt: new Date().toISOString() }
+                : t,
+            ),
+          );
           // Close dialog
           setSelectedTransaction(null);
           // Refresh list to ensure consistency
@@ -193,7 +215,9 @@ export default function PaymentTransactions() {
           setError(data.error || "Failed to update transaction status");
         }
       } else {
-        setError(`Failed to update transaction status: ${response.status} ${response.statusText}`);
+        setError(
+          `Failed to update transaction status: ${response.status} ${response.statusText}`,
+        );
       }
     } catch (error) {
       console.error("Error updating transaction status:", error);
@@ -201,21 +225,38 @@ export default function PaymentTransactions() {
     }
   };
 
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = (transaction.userName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-                         (transaction.userEmail?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-                         (transaction.transactionId?.toLowerCase() || "").includes(searchTerm.toLowerCase());
-    const matchesStatus = selectedStatus === "all" || transaction.status === selectedStatus;
-    const matchesType = selectedType === "all" || transaction.type === selectedType;
+  const filteredTransactions = transactions.filter((transaction) => {
+    const matchesSearch =
+      (transaction.userName?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase(),
+      ) ||
+      (transaction.userEmail?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase(),
+      ) ||
+      (transaction.transactionId?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase(),
+      );
+    const matchesStatus =
+      selectedStatus === "all" || transaction.status === selectedStatus;
+    const matchesType =
+      selectedType === "all" || transaction.type === selectedType;
 
     return matchesSearch && matchesStatus && matchesType;
   });
 
   const stats = {
     totalTransactions: transactions.length,
-    totalRevenue: transactions.filter(t => (t.status === "paid" || t.status === "completed") && t.type !== "refund").reduce((sum, t) => sum + t.amount, 0),
-    pendingTransactions: transactions.filter(t => t.status === "pending").length,
-    failedTransactions: transactions.filter(t => t.status === "failed").length,
+    totalRevenue: transactions
+      .filter(
+        (t) =>
+          (t.status === "paid" || t.status === "completed") &&
+          t.type !== "refund",
+      )
+      .reduce((sum, t) => sum + t.amount, 0),
+    pendingTransactions: transactions.filter((t) => t.status === "pending")
+      .length,
+    failedTransactions: transactions.filter((t) => t.status === "failed")
+      .length,
   };
 
   if (loading) {
@@ -249,8 +290,12 @@ export default function PaymentTransactions() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-2xl font-bold text-gray-900">Payment Transactions</h3>
-          <p className="text-gray-600">Monitor and manage all payment transactions</p>
+          <h3 className="text-2xl font-bold text-gray-900">
+            Payment Transactions
+          </h3>
+          <p className="text-gray-600">
+            Monitor and manage all payment transactions
+          </p>
         </div>
         <Button className="bg-[#C70000] hover:bg-[#A60000]">
           <Download className="h-4 w-4 mr-2" />
@@ -262,7 +307,9 @@ export default function PaymentTransactions() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Transactions
+            </CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -276,27 +323,37 @@ export default function PaymentTransactions() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{stats.totalRevenue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              ₹{stats.totalRevenue.toLocaleString()}
+            </div>
             <p className="text-xs text-muted-foreground">Paid payments</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Payments</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Pending Payments
+            </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.pendingTransactions}</div>
+            <div className="text-2xl font-bold text-yellow-600">
+              {stats.pendingTransactions}
+            </div>
             <p className="text-xs text-muted-foreground">Awaiting completion</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Failed Payments</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Failed Payments
+            </CardTitle>
             <XCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.failedTransactions}</div>
+            <div className="text-2xl font-bold text-red-600">
+              {stats.failedTransactions}
+            </div>
             <p className="text-xs text-muted-foreground">Need attention</p>
           </CardContent>
         </Card>
@@ -349,215 +406,321 @@ export default function PaymentTransactions() {
             <Table className="min-w-full">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="whitespace-nowrap">Transaction ID</TableHead>
+                  <TableHead className="whitespace-nowrap">
+                    Transaction ID
+                  </TableHead>
                   <TableHead className="whitespace-nowrap">User</TableHead>
                   <TableHead className="whitespace-nowrap">Amount</TableHead>
                   <TableHead className="whitespace-nowrap">Type</TableHead>
                   <TableHead className="whitespace-nowrap">Status</TableHead>
-                  <TableHead className="whitespace-nowrap">Payment Method</TableHead>
-                  <TableHead className="whitespace-nowrap">Payment Details</TableHead>
+                  <TableHead className="whitespace-nowrap">
+                    Payment Method
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap">
+                    Payment Details
+                  </TableHead>
                   <TableHead className="whitespace-nowrap">Date</TableHead>
                   <TableHead className="whitespace-nowrap">Actions</TableHead>
                 </TableRow>
               </TableHeader>
-            <TableBody>
-              {filteredTransactions.map((transaction) => (
-                <TableRow key={transaction._id}>
-                  <TableCell className="font-medium">
-                    <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                      {transaction.transactionId}
-                    </code>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{transaction.userName}</p>
-                      <p className="text-sm text-gray-500">{transaction.userEmail}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-semibold">₹{transaction.amount}</span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={getTypeColor(transaction.type)}
-                    >
-                      {transaction.type ? transaction.type.replace("_", " ") : "Unknown"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      {getStatusIcon(transaction.status)}
+              <TableBody>
+                {filteredTransactions.map((transaction) => (
+                  <TableRow key={transaction._id}>
+                    <TableCell className="font-medium">
+                      <code className="text-xs bg-gray-100 px-2 py-1 rounded">
+                        {transaction.transactionId}
+                      </code>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{transaction.userName}</p>
+                        <p className="text-sm text-gray-500">
+                          {transaction.userEmail}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-semibold">
+                        ₹{transaction.amount}
+                      </span>
+                    </TableCell>
+                    <TableCell>
                       <Badge
                         variant="outline"
-                        className={getStatusColor(transaction.status)}
+                        className={getTypeColor(transaction.type)}
                       >
-                        {(transaction.status === "completed" ? "paid" : transaction.status)}
+                        {transaction.type
+                          ? transaction.type.replace("_", " ")
+                          : "Unknown"}
                       </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="capitalize">{transaction.paymentMethod}</span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {transaction.paymentDetails?.upiId && (
-                        <div>
-                          <span className="text-xs text-gray-500">UPI ID:</span>
-                          <p className="font-mono text-xs">{transaction.paymentDetails.upiId}</p>
-                        </div>
-                      )}
-                      {transaction.paymentDetails?.bankAccount && (
-                        <div>
-                          <span className="text-xs text-gray-500">Bank A/c:</span>
-                          <p className="font-mono text-xs">{transaction.paymentDetails.bankAccount}</p>
-                        </div>
-                      )}
-                      {transaction.paymentDetails?.transactionId && (
-                        <div>
-                          <span className="text-xs text-gray-500">Txn ID:</span>
-                          <p className="font-mono text-xs">{transaction.paymentDetails.transactionId}</p>
-                        </div>
-                      )}
-                      {!transaction.paymentDetails?.upiId && !transaction.paymentDetails?.bankAccount && !transaction.paymentDetails?.transactionId && (
-                        <span className="text-xs text-gray-400">No details</span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(transaction.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          size="sm" 
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        {getStatusIcon(transaction.status)}
+                        <Badge
                           variant="outline"
-                          onClick={() => setSelectedTransaction(transaction)}
+                          className={getStatusColor(transaction.status)}
                         >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Transaction Details</DialogTitle>
-                        </DialogHeader>
-                        {selectedTransaction && (
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="font-semibold">Transaction ID:</label>
-                                <p className="font-mono text-sm">{selectedTransaction.transactionId}</p>
-                              </div>
-                              <div>
-                                <label className="font-semibold">Amount:</label>
-                                <p className="text-lg font-bold">₹{selectedTransaction.amount}</p>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="font-semibold">User:</label>
-                                <p>{selectedTransaction.userName}</p>
-                                <p className="text-sm text-gray-500">{selectedTransaction.userEmail}</p>
-                              </div>
-                              <div>
-                              <label className="font-semibold">Payment Method:</label>
-                              <p className="capitalize">{selectedTransaction.paymentMethod}</p>
-                            </div>
-                          </div>
-
-                          {/* Payment Details Section */}
-                          {(selectedTransaction.paymentDetails?.upiId || selectedTransaction.paymentDetails?.bankAccount || selectedTransaction.paymentDetails?.transactionId) && (
-                            <div className="border-t pt-4">
-                              <label className="font-semibold block mb-3">Payment Details:</label>
-                              <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                                {selectedTransaction.paymentDetails?.upiId && (
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <span className="text-sm font-medium text-gray-600">UPI ID:</span>
-                                    <span className="text-sm font-mono break-all">{selectedTransaction.paymentDetails.upiId}</span>
-                                  </div>
-                                )}
-                                {selectedTransaction.paymentDetails?.bankAccount && (
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <span className="text-sm font-medium text-gray-600">Bank Account:</span>
-                                    <span className="text-sm font-mono break-all">{selectedTransaction.paymentDetails.bankAccount}</span>
-                                  </div>
-                                )}
-                                {selectedTransaction.paymentDetails?.transactionId && (
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <span className="text-sm font-medium text-gray-600">Transaction ID:</span>
-                                    <span className="text-sm font-mono break-all">{selectedTransaction.paymentDetails.transactionId}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="grid grid-cols-2 gap-4">
-                            </div>
-                            <div>
-                              <label className="font-semibold">Description:</label>
-                              <p className="mt-1 p-3 bg-gray-50 rounded-lg">
-                                {selectedTransaction.description}
-                              </p>
-                            </div>
-                            {selectedTransaction.packageName && (
-                              <div>
-                                <label className="font-semibold">Package:</label>
-                                <p>{selectedTransaction.packageName}</p>
-                              </div>
-                            )}
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="font-semibold">Created:</label>
-                                <p>{new Date(selectedTransaction.createdAt).toLocaleString()}</p>
-                              </div>
-                              <div>
-                                <label className="font-semibold">Updated:</label>
-                                <p>{new Date(selectedTransaction.updatedAt).toLocaleString()}</p>
-                              </div>
-                            </div>
-
-                            {/* Status Update Actions */}
-                            {selectedTransaction.status === "pending" && (
-                              <div className="border-t pt-4">
-                                <label className="font-semibold mb-3 block">Update Payment Status:</label>
-                                <div className="flex space-x-2">
-                                  <Button
-                                    size="sm"
-                                    className="bg-green-600 hover:bg-green-700"
-                                    onClick={() => updateTransactionStatus(selectedTransaction._id, "paid")}
-                                  >
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    Mark as Paid
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => updateTransactionStatus(selectedTransaction._id, "failed")}
-                                  >
-                                    <XCircle className="h-4 w-4 mr-1" />
-                                    Mark as Failed
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
+                          {transaction.status === "completed"
+                            ? "paid"
+                            : transaction.status}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="capitalize">
+                        {transaction.paymentMethod}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {transaction.paymentDetails?.upiId && (
+                          <div>
+                            <span className="text-xs text-gray-500">
+                              UPI ID:
+                            </span>
+                            <p className="font-mono text-xs">
+                              {transaction.paymentDetails.upiId}
+                            </p>
                           </div>
                         )}
-                      </DialogContent>
-                    </Dialog>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filteredTransactions.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center text-gray-500 py-8">
-                    No transactions found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                        {transaction.paymentDetails?.bankAccount && (
+                          <div>
+                            <span className="text-xs text-gray-500">
+                              Bank A/c:
+                            </span>
+                            <p className="font-mono text-xs">
+                              {transaction.paymentDetails.bankAccount}
+                            </p>
+                          </div>
+                        )}
+                        {transaction.paymentDetails?.transactionId && (
+                          <div>
+                            <span className="text-xs text-gray-500">
+                              Txn ID:
+                            </span>
+                            <p className="font-mono text-xs">
+                              {transaction.paymentDetails.transactionId}
+                            </p>
+                          </div>
+                        )}
+                        {!transaction.paymentDetails?.upiId &&
+                          !transaction.paymentDetails?.bankAccount &&
+                          !transaction.paymentDetails?.transactionId && (
+                            <span className="text-xs text-gray-400">
+                              No details
+                            </span>
+                          )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(transaction.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedTransaction(transaction)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Transaction Details</DialogTitle>
+                          </DialogHeader>
+                          {selectedTransaction && (
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="font-semibold">
+                                    Transaction ID:
+                                  </label>
+                                  <p className="font-mono text-sm">
+                                    {selectedTransaction.transactionId}
+                                  </p>
+                                </div>
+                                <div>
+                                  <label className="font-semibold">
+                                    Amount:
+                                  </label>
+                                  <p className="text-lg font-bold">
+                                    ₹{selectedTransaction.amount}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="font-semibold">User:</label>
+                                  <p>{selectedTransaction.userName}</p>
+                                  <p className="text-sm text-gray-500">
+                                    {selectedTransaction.userEmail}
+                                  </p>
+                                </div>
+                                <div>
+                                  <label className="font-semibold">
+                                    Payment Method:
+                                  </label>
+                                  <p className="capitalize">
+                                    {selectedTransaction.paymentMethod}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Payment Details Section */}
+                              {(selectedTransaction.paymentDetails?.upiId ||
+                                selectedTransaction.paymentDetails
+                                  ?.bankAccount ||
+                                selectedTransaction.paymentDetails
+                                  ?.transactionId) && (
+                                <div className="border-t pt-4">
+                                  <label className="font-semibold block mb-3">
+                                    Payment Details:
+                                  </label>
+                                  <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                                    {selectedTransaction.paymentDetails
+                                      ?.upiId && (
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <span className="text-sm font-medium text-gray-600">
+                                          UPI ID:
+                                        </span>
+                                        <span className="text-sm font-mono break-all">
+                                          {
+                                            selectedTransaction.paymentDetails
+                                              .upiId
+                                          }
+                                        </span>
+                                      </div>
+                                    )}
+                                    {selectedTransaction.paymentDetails
+                                      ?.bankAccount && (
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <span className="text-sm font-medium text-gray-600">
+                                          Bank Account:
+                                        </span>
+                                        <span className="text-sm font-mono break-all">
+                                          {
+                                            selectedTransaction.paymentDetails
+                                              .bankAccount
+                                          }
+                                        </span>
+                                      </div>
+                                    )}
+                                    {selectedTransaction.paymentDetails
+                                      ?.transactionId && (
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <span className="text-sm font-medium text-gray-600">
+                                          Transaction ID:
+                                        </span>
+                                        <span className="text-sm font-mono break-all">
+                                          {
+                                            selectedTransaction.paymentDetails
+                                              .transactionId
+                                          }
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="grid grid-cols-2 gap-4"></div>
+                              <div>
+                                <label className="font-semibold">
+                                  Description:
+                                </label>
+                                <p className="mt-1 p-3 bg-gray-50 rounded-lg">
+                                  {selectedTransaction.description}
+                                </p>
+                              </div>
+                              {selectedTransaction.packageName && (
+                                <div>
+                                  <label className="font-semibold">
+                                    Package:
+                                  </label>
+                                  <p>{selectedTransaction.packageName}</p>
+                                </div>
+                              )}
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="font-semibold">
+                                    Created:
+                                  </label>
+                                  <p>
+                                    {new Date(
+                                      selectedTransaction.createdAt,
+                                    ).toLocaleString()}
+                                  </p>
+                                </div>
+                                <div>
+                                  <label className="font-semibold">
+                                    Updated:
+                                  </label>
+                                  <p>
+                                    {new Date(
+                                      selectedTransaction.updatedAt,
+                                    ).toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Status Update Actions */}
+                              {selectedTransaction.status === "pending" && (
+                                <div className="border-t pt-4">
+                                  <label className="font-semibold mb-3 block">
+                                    Update Payment Status:
+                                  </label>
+                                  <div className="flex space-x-2">
+                                    <Button
+                                      size="sm"
+                                      className="bg-green-600 hover:bg-green-700"
+                                      onClick={() =>
+                                        updateTransactionStatus(
+                                          selectedTransaction._id,
+                                          "paid",
+                                        )
+                                      }
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-1" />
+                                      Mark as Paid
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() =>
+                                        updateTransactionStatus(
+                                          selectedTransaction._id,
+                                          "failed",
+                                        )
+                                      }
+                                    >
+                                      <XCircle className="h-4 w-4 mr-1" />
+                                      Mark as Failed
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </DialogContent>
+                      </Dialog>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filteredTransactions.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={9}
+                      className="text-center text-gray-500 py-8"
+                    >
+                      No transactions found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
@@ -580,8 +743,9 @@ export default function PaymentTransactions() {
                 </span>
               </div>
               <p className="text-sm text-green-700">
-                Manual UPI and bank transfer payments are being tracked and saved to database
-                with proper Pending/Paid status. Admin can manually approve payments.
+                Manual UPI and bank transfer payments are being tracked and
+                saved to database with proper Pending/Paid status. Admin can
+                manually approve payments.
               </p>
             </div>
 
@@ -594,28 +758,39 @@ export default function PaymentTransactions() {
               </div>
               <p className="text-sm text-blue-700">
                 Admin can update payment status from Pending to Paid or Failed.
-                All payment entries are properly saved in database with full audit trail.
+                All payment entries are properly saved in database with full
+                audit trail.
               </p>
             </div>
           </div>
 
           <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-900 mb-2">Payment Flow:</h4>
+            <h4 className="text-sm font-medium text-gray-900 mb-2">
+              Payment Flow:
+            </h4>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
               <div className="text-center p-2 bg-white rounded border">
-                <div className="text-xs font-medium text-blue-600">1. User Payment</div>
+                <div className="text-xs font-medium text-blue-600">
+                  1. User Payment
+                </div>
                 <div className="text-xs text-gray-600">UPI/Bank Transfer</div>
               </div>
               <div className="text-center p-2 bg-white rounded border">
-                <div className="text-xs font-medium text-yellow-600">2. Pending Status</div>
+                <div className="text-xs font-medium text-yellow-600">
+                  2. Pending Status
+                </div>
                 <div className="text-xs text-gray-600">Saved in Database</div>
               </div>
               <div className="text-center p-2 bg-white rounded border">
-                <div className="text-xs font-medium text-purple-600">3. Admin Review</div>
+                <div className="text-xs font-medium text-purple-600">
+                  3. Admin Review
+                </div>
                 <div className="text-xs text-gray-600">Manual Verification</div>
               </div>
               <div className="text-center p-2 bg-white rounded border">
-                <div className="text-xs font-medium text-green-600">4. Paid Status</div>
+                <div className="text-xs font-medium text-green-600">
+                  4. Paid Status
+                </div>
                 <div className="text-xs text-gray-600">Service Activated</div>
               </div>
             </div>

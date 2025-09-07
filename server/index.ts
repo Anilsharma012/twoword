@@ -712,7 +712,10 @@ export function createServer() {
     imagesUpload(req, res, (err: any) => {
       if (err) {
         const msg = String(err?.message || "");
-        if (msg.toLowerCase().includes("file too large") || err.name === "MulterError") {
+        if (
+          msg.toLowerCase().includes("file too large") ||
+          err.name === "MulterError"
+        ) {
           return res.status(413).json({
             success: false,
             error: "One or more images are too large. Max 10MB per image.",
@@ -2185,22 +2188,18 @@ export function createServer() {
       if (!res.headersSent) {
         if (err && err.name === "MulterError") {
           // Multer-specific errors (e.g., file too large)
-          return res
-            .status(400)
-            .json({
-              success: false,
-              error: err.message || "File upload error",
-            });
+          return res.status(400).json({
+            success: false,
+            error: err.message || "File upload error",
+          });
         }
 
         // Custom invalid file type error
         if (err && err.code === "INVALID_FILE_TYPE") {
-          return res
-            .status(400)
-            .json({
-              success: false,
-              error: err.message || "Invalid file type",
-            });
+          return res.status(400).json({
+            success: false,
+            error: err.message || "Invalid file type",
+          });
         }
 
         // CORS errors and others
@@ -2208,12 +2207,10 @@ export function createServer() {
           return res.status(403).json({ success: false, error: err.message });
         }
 
-        return res
-          .status(500)
-          .json({
-            success: false,
-            error: err && err.message ? err.message : "Internal server error",
-          });
+        return res.status(500).json({
+          success: false,
+          error: err && err.message ? err.message : "Internal server error",
+        });
       }
       next(err);
     });
@@ -2226,12 +2223,10 @@ export function createServer() {
         err && err.message ? err.message : err,
       );
       if (!res.headersSent) {
-        return res
-          .status(500)
-          .json({
-            success: false,
-            error: err && err.message ? err.message : "Internal server error",
-          });
+        return res.status(500).json({
+          success: false,
+          error: err && err.message ? err.message : "Internal server error",
+        });
       }
       next(err);
     });

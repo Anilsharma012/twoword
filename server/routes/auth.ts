@@ -22,7 +22,9 @@ export const logout: RequestHandler = async (req, res) => {
     });
     return res.json({ success: true, data: { message: "Logged out" } });
   } catch (e: any) {
-    return res.status(500).json({ success: false, error: e?.message || "Failed to logout" });
+    return res
+      .status(500)
+      .json({ success: false, error: e?.message || "Failed to logout" });
   }
 };
 
@@ -549,17 +551,25 @@ export const verifyOTP: RequestHandler = async (req, res) => {
         phone,
         userType,
         emailVerified: false,
-        preferences: { propertyTypes: [], priceRange: { min: 0, max: 10000000 }, locations: [] },
+        preferences: {
+          propertyTypes: [],
+          priceRange: { min: 0, max: 10000000 },
+          locations: [],
+        },
         favorites: [],
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      user = await db.collection("users").findOne({ _id: insertRes.insertedId });
+      user = await db
+        .collection("users")
+        .findOne({ _id: insertRes.insertedId });
     } else {
-      await db.collection("users").updateOne(
-        { _id: user._id },
-        { $set: { lastLogin: new Date(), updatedAt: new Date() } },
-      );
+      await db
+        .collection("users")
+        .updateOne(
+          { _id: user._id },
+          { $set: { lastLogin: new Date(), updatedAt: new Date() } },
+        );
     }
 
     const token = jwt.sign(

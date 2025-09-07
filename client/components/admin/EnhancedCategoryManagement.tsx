@@ -139,11 +139,12 @@ export default function EnhancedCategoryManagement() {
             : [],
           order: c.order ?? c.sortOrder ?? 0,
           active: c.active ?? c.isActive ?? false,
-          count:
-            c.count ?? c.propertiesCount ?? c.counts?.properties ?? 0,
+          count: c.count ?? c.propertiesCount ?? c.counts?.properties ?? 0,
         }));
         const exclude = ["other categories", "new property", "other category"]; // case-insensitive
-        const cleaned = mapped.filter((c) => !exclude.includes((c.name || "").toLowerCase()));
+        const cleaned = mapped.filter(
+          (c) => !exclude.includes((c.name || "").toLowerCase()),
+        );
         setCategories(
           cleaned.sort(
             (a: Category, b: Category) => (a?.order ?? 0) - (b?.order ?? 0),
@@ -619,16 +620,20 @@ export default function EnhancedCategoryManagement() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {(category.icon || (category as any).iconUrl) ? (
+                    {category.icon || (category as any).iconUrl ? (
                       <div className="w-8 h-8 bg-red-50 border border-red-100 rounded-lg flex items-center justify-center">
-                        {(category.icon || (category as any).iconUrl).startsWith("http") ? (
+                        {(
+                          category.icon || (category as any).iconUrl
+                        ).startsWith("http") ? (
                           <img
                             src={category.icon || (category as any).iconUrl}
                             alt="Category icon"
                             className="w-6 h-6 object-cover rounded"
                           />
                         ) : (
-                          <span className="text-lg">{category.icon || (category as any).iconUrl}</span>
+                          <span className="text-lg">
+                            {category.icon || (category as any).iconUrl}
+                          </span>
                         )}
                       </div>
                     ) : (
@@ -752,7 +757,9 @@ export default function EnhancedCategoryManagement() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => (window.location.href = `/admin/ads/categories/${category._id}/content`)}
+                        onClick={() =>
+                          (window.location.href = `/admin/ads/categories/${category._id}/content`)
+                        }
                         aria-label="Edit content"
                       >
                         Content
