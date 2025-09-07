@@ -226,14 +226,31 @@ export default function PostProperty() {
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    if (formData.images.length + files.length <= 10) {
+    const incoming = Array.from(event.target.files || []);
+    const MAX_FILES = 10;
+    const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+
+    const validFiles = incoming.filter((f) => {
+      const ok = f.size <= MAX_SIZE;
+      if (!ok) {
+        alert(`File too large: ${f.name}. Max 10MB per image.`);
+      }
+      return ok;
+    });
+
+    const totalCount = formData.images.length + validFiles.length;
+    if (totalCount > MAX_FILES) {
+      alert(`Maximum ${MAX_FILES} images allowed`);
+    }
+
+    const allowedToAdd = Math.max(0, MAX_FILES - formData.images.length);
+    const filesToAdd = validFiles.slice(0, allowedToAdd);
+
+    if (filesToAdd.length > 0) {
       setFormData((prev) => ({
         ...prev,
-        images: [...prev.images, ...files],
+        images: [...prev.images, ...filesToAdd],
       }));
-    } else {
-      alert("Maximum 10 images allowed");
     }
   };
 
