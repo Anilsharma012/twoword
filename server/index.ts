@@ -690,6 +690,7 @@ export function createServer() {
   app.post("/api/auth/google", googleAuth);
   app.get("/api/auth/profile", authenticateToken, getUserProfile);
   app.put("/api/auth/profile", authenticateToken, updateUserProfile);
+  app.post("/api/auth/logout", (await import("./routes/auth")).logout);
 
   // Email verification routes
   app.post("/api/auth/send-verification", sendEmailVerification);
