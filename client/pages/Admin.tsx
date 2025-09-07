@@ -381,25 +381,8 @@ export default function Admin() {
     // Fetch stats with enhanced error handling
     try {
       console.log("Fetching admin stats...");
-      const statsUrl = createApiUrl("admin/stats");
-      console.log("📊 Stats URL:", statsUrl);
-
-      const statsResponse = await fetch(statsUrl, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        cache: "no-cache",
-        credentials: "include",
-      });
-
-      console.log("📊 Stats response:", {
-        status: statsResponse.status,
-        statusText: statsResponse.statusText,
-        ok: statsResponse.ok,
-      });
-
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json();
+      try {
+        const statsData = await adminApi.getStats(token);
         console.log("Stats data received:", statsData);
         if (statsData.success) {
           setStats(statsData.data);
@@ -407,20 +390,20 @@ export default function Admin() {
           console.error("Stats fetch failed:", statsData.error);
           errors.push("Stats API failed");
         }
-      } else if (statsResponse.status === 401 || statsResponse.status === 403) {
-        console.warn("Stats unauthorized; switching to safe mode");
-        loadMockData();
-        return;
-      } else if (statsResponse.status === 503) {
-        console.log("Database still connecting, will retry...");
-        errors.push("Database connecting");
-      } else {
-        console.error(
-          "Stats response not ok:",
-          statsResponse.status,
-          statsResponse.statusText,
-        );
-        errors.push(`Stats API error: ${statsResponse.status}`);
+      } catch (err: any) {
+        const msg = String(err?.message || "");
+        if (msg.includes("401") || msg.includes("403")) {
+          console.warn("Stats unauthorized; switching to safe mode");
+          loadMockData();
+          return;
+        }
+        if (msg.includes("503")) {
+          console.log("Database still connecting, will retry...");
+          errors.push("Database connecting");
+        } else {
+          console.error("Stats error:", err);
+          errors.push(msg || "Stats API error");
+        }
       }
     } catch (error) {
       console.error("Error fetching stats:", {
