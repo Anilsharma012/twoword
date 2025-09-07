@@ -409,6 +409,11 @@ export default function PostProperty() {
           window.location.href = "/user-login";
           return;
         }
+        if (response.status === 413) {
+          const msg = await response.text().catch(() => "");
+          alert("One or more images are too large. Max 10MB per image.");
+          throw new Error(`HTTP 413: Failed to create property`);
+        }
         throw new Error(`HTTP ${response.status}: Failed to create property`);
       }
 
