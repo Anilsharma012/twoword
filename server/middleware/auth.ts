@@ -12,7 +12,19 @@ export interface AuthenticatedRequest extends Request {
 
 export const authenticateToken: RequestHandler = (req, res, next) => {
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
+  let token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
+
+  // Fallback: read token from httpOnly cookie
+  if (!token) {
+    const cookieHeader = String(req.headers["cookie"] || "");
+    const parts = cookieHeader.split(";").map((s) => s.trim());
+    for (const p of parts) {
+      if (p.startsWith("token=")) {
+        token = decodeURIComponent(p.substring("token=".length));
+        break;
+      }
+    }
+  }
 
   if (!token) {
     return res.status(401).json({
