@@ -206,6 +206,8 @@ function App() {
                   <Route path="/terms-conditions" element={<ContentPage />} />
                   <Route path="/refund-policy" element={<ContentPage />} />
                   <Route path="/contact-us" element={<ContentPage />} />
+                  {/* Aliases */}
+                  <Route path="/contact" element={<Navigate to="/p/contact-us" replace />} />
                   {/* Footer Test Page */}
                   <Route path="/footer-test" element={<FooterTest />} />
                   <Route path="/footer-debug" element={<FooterDebugPage />} />
