@@ -356,6 +356,44 @@ export default function PostProperty() {
     return () => clearTimeout(id);
   }, [formData]);
 
+  // Utility: compress image to target size and dimensions
+  const compressImage = async (file: File, targetBytes: number, maxDim: number): Promise<File> => {
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = (e) => reject(new Error("Failed to load image for compression"));
+        image.src = url;
+      });
+
+      const { width, height } = img;
+      const scale = Math.min(1, maxDim / Math.max(width, height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(width * scale));
+      canvas.height = Math.max(1, Math.round(height * scale));
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return file;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      let quality = 0.8;
+      let blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+      // Iteratively reduce quality to meet target size
+      while (blob && blob.size > targetBytes && quality > 0.4) {
+        quality -= 0.1;
+        blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+      }
+
+      if (!blob) return file;
+
+      const fileName = file.name.replace(/\.[^.]+$/, ".jpg");
+      const out = new File([blob], fileName, { type: "image/jpeg" });
+      return out;
+    } catch {
+      return file;
+    }
+  };
+
   const handleSubmit = async (withPackage = false) => {
     try {
       setLoading(true);
@@ -388,9 +426,19 @@ export default function PostProperty() {
       submitData.append("premium", withPackage.toString());
       submitData.append("contactVisible", (!withPackage).toString()); // Free listings show contact immediately
 
+      // Compress images to avoid upstream 413s (Builder preview and proxies)
+      const isPreview = typeof window !== "undefined" && window.location.hostname.includes("projects.builder.codes");
+      const targetBytes = isPreview ? 400 * 1024 : 1024 * 1024; // ~400KB in preview, ~1MB in prod
+      const maxDim = isPreview ? 1280 : 1920;
+      const processedImages: File[] = [];
+      for (const image of formData.images) {
+        const toAdd = image.size > targetBytes ? await compressImage(image, targetBytes, maxDim) : image;
+        processedImages.push(toAdd);
+      }
+
       // Add images
-      formData.images.forEach((image, index) => {
-        submitData.append(`images`, image);
+      processedImages.forEach((image) => {
+        submitData.append("images", image);
       });
 
       const response = await fetch("/api/properties", {
