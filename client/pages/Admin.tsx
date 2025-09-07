@@ -268,35 +268,9 @@ export default function Admin() {
         const testUrl = createApiUrl("ping");
         console.log("🎯 Testing API endpoint:", testUrl);
 
-        // Try a simple fetch to public health endpoint with a reasonable timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          console.log("⏰ Request timeout after 10 seconds");
-          controller.abort();
-        }, 10000);
-
-        const response = await fetch(testUrl, {
-          headers: {
-            "Cache-Control": "no-cache",
-            Pragma: "no-cache",
-          },
-          signal: controller.signal,
-          cache: "no-cache",
-          credentials: "include",
-        });
-
-        clearTimeout(timeoutId);
-
-        console.log("📡 Response received:", {
-          status: response.status,
-          statusText: response.statusText,
-          ok: response.ok,
-          url: response.url,
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+        // Use centralized API (with retries/fallbacks)
+        const { data: pingData } = await api.get("ping");
+        console.log("📡 Ping response:", pingData);
 
         // If we get here, connectivity is working
         console.log("✅ Connectivity test passed (ping)");
@@ -888,7 +862,7 @@ export default function Admin() {
                   <div className="flex-1">
                     <p className="text-sm font-medium">{user.name}</p>
                     <p className="text-xs text-gray-500">
-                      {user.email} • {user.userType}
+                      {user.email} ��� {user.userType}
                     </p>
                   </div>
                   <Badge
