@@ -53,7 +53,7 @@ interface Transaction {
   userEmail: string;
   amount: number;
   type: "package_purchase" | "listing_fee" | "featured_upgrade" | "refund";
-  status: "pending" | "completed" | "failed" | "cancelled";
+  status: "pending" | "paid" | "failed" | "cancelled";
   paymentMethod: "upi" | "card" | "netbanking" | "wallet" | "bank_transfer";
   transactionId: string;
   packageId?: string;
