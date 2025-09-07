@@ -275,7 +275,7 @@ export default function PaymentTransactions() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₹{stats.totalRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Completed payments</p>
+            <p className="text-xs text-muted-foreground">Paid payments</p>
           </CardContent>
         </Card>
         <Card>
