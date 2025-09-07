@@ -149,6 +149,7 @@ export const apiRequest = async (
   // Allow some endpoints a longer timeout
   const longerEndpoints = [
     "chat/unread-count",
+    "notifications/unread-count",
     "banners",
     "properties/featured",
     "properties",
