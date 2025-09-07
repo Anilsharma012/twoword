@@ -46,43 +46,43 @@ export default function PackagesShowcase() {
       setLoading(true);
       setError(null);
 
-      // Try the global API function first
-      console.log("🔄 Attempting to fetch packages via global API...");
+      // Prefer centralized API (with retries/XHR fallback)
+      console.log("🔄 Fetching packages via centralized API...");
 
-      let response;
       let data;
-
       try {
-        // Check if global API is available
-        if (typeof (window as any).api === "function") {
-          response = await (window as any).api("/plans?isActive=true");
-          data = response.ok ? response.json : response.data;
-        } else {
-          console.warn("⚠️ Global API not available, using direct fetch");
-          throw new Error("Global API not available");
-        }
-      } catch (globalApiError: any) {
+        const { api } = await import("@/lib/api");
+        const res = await api.get("plans?isActive=true");
+        data = res?.data;
+      } catch (centralError: any) {
         console.warn(
-          "⚠️ Global API failed, trying direct fetch:",
-          globalApiError.message,
+          "⚠️ Central API failed, trying global API then direct fetch:",
+          centralError?.message || centralError,
         );
-
-        // Fallback to direct fetch if global API fails
-        const directResponse = await fetch("/api/plans?isActive=true", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!directResponse.ok) {
-          throw new Error(
-            `HTTP ${directResponse.status}: ${directResponse.statusText}`,
+        try {
+          if (typeof (window as any).api === "function") {
+            const response = await (window as any).api("/plans?isActive=true");
+            data = response.ok ? response.json : response.data;
+          } else {
+            throw new Error("Global API not available");
+          }
+        } catch (globalApiError: any) {
+          console.warn(
+            "⚠️ Global API failed, trying direct fetch:",
+            globalApiError?.message || globalApiError,
           );
+          const directResponse = await fetch("/api/plans?isActive=true", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          });
+          if (!directResponse.ok) {
+            throw new Error(
+              `HTTP ${directResponse.status}: ${directResponse.statusText}`,
+            );
+          }
+          data = await directResponse.json();
+          console.log("✅ Direct fetch successful");
         }
-
-        data = await directResponse.json();
-        console.log("✅ Direct fetch successful");
       }
 
       if (data && data.success && Array.isArray(data.data)) {
