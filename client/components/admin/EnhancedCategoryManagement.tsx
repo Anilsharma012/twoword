@@ -320,6 +320,19 @@ export default function EnhancedCategoryManagement() {
       return;
 
     try {
+      // Pre-check: prevent delete when subcategories exist to avoid 400
+      const pre = await api.get(
+        `admin/subcategories/by-category/${categoryId}`,
+        token,
+      );
+      const subs = Array.isArray(pre?.data?.data) ? pre.data.data : [];
+      if (subs.length > 0) {
+        setError(
+          `Cannot delete category. It has ${subs.length} subcategories. Delete subcategories first.`,
+        );
+        return;
+      }
+
       const res = await api.delete(`admin/categories/${categoryId}`, token);
       if (res && res.data && res.data.success) {
         setCategories(categories.filter((cat) => cat._id !== categoryId));
