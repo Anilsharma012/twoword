@@ -11,6 +11,21 @@ import twilio from "twilio";
 // <- tumhare DB helper ka path
 import { getAdmin } from "../firebaseAdmin"; // <- new file
 
+// Logout handler - clear cookie
+export const logout: RequestHandler = async (req, res) => {
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+    return res.json({ success: true, data: { message: "Logged out" } });
+  } catch (e: any) {
+    return res.status(500).json({ success: false, error: e?.message || "Failed to logout" });
+  }
+};
+
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 const SALT_ROUNDS = 10;
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || "";
@@ -213,6 +228,16 @@ export const registerUser: RequestHandler = async (req, res) => {
         "User registered successfully. Please check your email to verify your account.",
     };
 
+    // Set httpOnly cookie for session persistence
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: sevenDays,
+      path: "/",
+    });
+
     console.log("📤 Sending successful registration response");
     res.status(201).json(response);
   } catch (error: any) {
@@ -371,6 +396,16 @@ export const loginUser: RequestHandler = async (req, res) => {
         ? "First login successful - please change your password"
         : "Login successful",
     };
+
+    // Set httpOnly cookie for session persistence
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: sevenDays,
+      path: "/",
+    });
 
     res.json(response);
   } catch (error) {
@@ -545,6 +580,16 @@ export const verifyOTP: RequestHandler = async (req, res) => {
       phone: user.phone,
       userType: user.userType,
     };
+
+    // Set httpOnly cookie
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: sevenDays,
+      path: "/",
+    });
 
     return res.json({
       success: true,
