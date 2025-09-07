@@ -187,6 +187,8 @@ export default function PaymentTransactions() {
           ));
           // Close dialog
           setSelectedTransaction(null);
+          // Refresh list to ensure consistency
+          fetchTransactions();
         } else {
           setError(data.error || "Failed to update transaction status");
         }
