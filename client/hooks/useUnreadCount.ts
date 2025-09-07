@@ -19,9 +19,17 @@ export const useUnreadCount = () => {
 
         if (res && res.data && res.data.data) {
           setUnreadCount(res.data.data.totalUnread || 0);
+        } else {
+          setUnreadCount(0);
         }
       } catch (error: any) {
-        // Log concise error for diagnostics
+        // Gracefully handle common transient issues by treating as zero unread
+        const msg = String(error?.message || "").toLowerCase();
+        if (msg.includes("http 404") || msg.includes("failed to fetch") || msg.includes("timeout") || msg.includes("network")) {
+          if (mounted) setUnreadCount(0);
+          return;
+        }
+        // Log concise error for unexpected cases
         console.error("Error fetching unread count:", error?.message || error);
       }
     };

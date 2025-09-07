@@ -75,6 +75,8 @@ export default function CategoryProperties() {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [categoryData, setCategoryData] = useState<any>(null);
+  const [subcategories, setSubcategories] = useState<any[]>([]);
+  const [categoryContent, setCategoryContent] = useState<{ hero?: any; banners?: any[] } | null>(null);
 
   // Get category from URL path
   const getCurrentCategory = () => {
@@ -90,7 +92,20 @@ export default function CategoryProperties() {
   useEffect(() => {
     fetchCategoryData();
     fetchProperties();
+    fetchSubcategories();
+    fetchCategoryContent();
   }, [category, subcategory, slug]);
+
+  useEffect(() => {
+    const onSubUpdate = () => fetchSubcategories();
+    const onContentUpdate = () => fetchCategoryContent();
+    window.addEventListener("subcategories:updated", onSubUpdate);
+    window.addEventListener("category-content:updated", onContentUpdate);
+    return () => {
+      window.removeEventListener("subcategories:updated", onSubUpdate);
+      window.removeEventListener("category-content:updated", onContentUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     fetchProperties();
@@ -108,6 +123,43 @@ export default function CategoryProperties() {
       }
     } catch (error) {
       console.error("Error fetching category data:", error);
+    }
+  };
+
+  const fetchSubcategories = async () => {
+    try {
+      if (!category || slug || subcategory) {
+        setSubcategories([]);
+        return;
+      }
+      const res = await fetch(`/api/categories/${category}/subcategories`, {
+        headers: { "Cache-Control": "no-cache" },
+      });
+      const data = await res.json();
+      if (data?.success && Array.isArray(data.data)) {
+        setSubcategories(data.data);
+      } else {
+        setSubcategories([]);
+      }
+    } catch (e) {
+      setSubcategories([]);
+    }
+  };
+
+  const fetchCategoryContent = async () => {
+    try {
+      if (!category || slug || subcategory) {
+        setCategoryContent(null);
+        return;
+      }
+      const res = await fetch(`/api/categories/${category}/content`, {
+        headers: { "Cache-Control": "no-cache" },
+      });
+      const data = await res.json();
+      if (data?.success) setCategoryContent({ hero: data.data?.hero, banners: data.data?.banners || [] });
+      else setCategoryContent(null);
+    } catch {
+      setCategoryContent(null);
     }
   };
 
@@ -228,6 +280,82 @@ export default function CategoryProperties() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+
+      {/* Hero and Banners for category page */}
+      {!slug && !subcategory && categoryContent && (
+        <div className="px-0">
+          {categoryContent.hero?.active && categoryContent.hero?.images?.length ? (
+            <div className="w-full">
+              <div className="w-full overflow-x-auto">
+                <div className="flex gap-2 w-full min-w-full snap-x">
+                  {categoryContent.hero.images.map((img, i) => (
+                    <img key={i} src={img} alt={categoryContent.hero?.title || "Hero"} className="w-full h-52 md:h-72 object-cover flex-shrink-0 snap-center" />
+                  ))}
+                </div>
+              </div>
+              <div className="px-4 py-3">
+                {categoryContent.hero.title && (
+                  <h1 className="text-xl font-semibold">{categoryContent.hero.title}</h1>
+                )}
+                {categoryContent.hero.subtitle && (
+                  <p className="text-gray-600">{categoryContent.hero.subtitle}</p>
+                )}
+                {categoryContent.hero.ctaHref && categoryContent.hero.ctaLabel && (
+                  <button
+                    className="mt-3 bg-[#C70000] text-white px-4 py-2 rounded"
+                    onClick={() => (window.location.href = categoryContent.hero!.ctaHref!)}
+                    aria-label="Hero CTA"
+                  >
+                    {categoryContent.hero.ctaLabel}
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {Array.isArray(categoryContent.banners) && categoryContent.banners.length > 0 ? (
+            <div className="px-4 py-3">
+              <div className="flex gap-3 overflow-x-auto">
+                {categoryContent.banners.map((b: any, i: number) => (
+                  <a key={i} href={b.href || "#"} className="block" aria-label={`Banner ${i + 1}`}>
+                    <img src={b.image} alt={categoryContent.hero?.title || "Banner"} className="h-24 w-auto rounded border" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {/* Subcategories grid for category page */}
+      {!slug && !subcategory && subcategories && (
+        <div className="px-4 py-4">
+          <h2 className="text-lg font-semibold mb-3">Subcategories</h2>
+          {subcategories.length === 0 ? (
+            <div className="text-gray-500">No subcategories yet</div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {subcategories.map((s: any) => (
+                <button
+                  key={s._id || s.slug}
+                  onClick={() => (window.location.href = `/categories/${category}/${s.slug}`)}
+                  className="bg-white border border-gray-200 rounded-lg p-3 flex items-center gap-3 hover:bg-gray-50"
+                >
+                  {s.iconUrl ? (
+                    <img src={s.iconUrl} alt={s.name} className="w-8 h-8 rounded" />
+                  ) : (
+                    <div className="w-8 h-8 bg-gray-100 rounded" />
+                  )}
+                  <div className="text-left">
+                    <div className="font-medium text-sm">{s.name}</div>
+                    <div className="text-xs text-gray-500">/{s.slug}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Mobile Filters Overlay */}
       {showFilters && (

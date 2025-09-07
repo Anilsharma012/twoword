@@ -234,24 +234,42 @@ export default function CategoryManagement() {
       return;
 
     try {
+      // Pre-check: prevent delete when subcategories exist
+      const preRes = await fetch(
+        `/api/admin/subcategories/by-category/${categoryId}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      const { safeReadResponse, getApiErrorMessage } = await import(
+        "../../lib/response-utils"
+      );
+      const pre = await safeReadResponse(preRes);
+      if (pre.ok) {
+        const subs = Array.isArray((pre.data as any)?.data)
+          ? (pre.data as any).data
+          : [];
+        if (subs.length > 0) {
+          setError(
+            `Cannot delete category. It has ${subs.length} subcategories. Delete subcategories first.`,
+          );
+          return;
+        }
+      }
+
       const response = await fetch(`/api/admin/categories/${categoryId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const { safeReadResponse, getApiErrorMessage } = await import(
-        "../../lib/response-utils"
-      );
-      const { ok, status, data } = await safeReadResponse(response);
+      const del = await safeReadResponse(response);
 
-      if (ok) {
+      if (del.ok) {
         setCategories(categories.filter((cat) => cat._id !== categoryId));
       } else {
-        setError(getApiErrorMessage(data, status, "delete category"));
+        setError(getApiErrorMessage(del.data, del.status, "delete category"));
       }
-    } catch (error) {
-      console.error("Error deleting category:", error);
-      setError("Failed to delete category");
+    } catch (error: any) {
+      console.error("Error deleting category:", error?.message || error);
+      setError(error?.message || "Failed to delete category");
     }
   };
 

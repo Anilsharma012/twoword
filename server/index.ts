@@ -35,6 +35,11 @@ import {
   uploadCategoryIcon,
   handleIconUpload,
 } from "./routes/categories-new";
+import {
+  getAdminCategoryContent,
+  upsertAdminCategoryContent,
+  getPublicCategoryContent,
+} from "./routes/category-content";
 
 // Subcategory routes (new system)
 import {
@@ -109,6 +114,7 @@ import {
   getUserProfile,
   updateUserProfile,
   googleAuth,
+  logout,
 } from "./routes/auth";
 
 // Admin routes
@@ -685,6 +691,7 @@ export function createServer() {
   app.post("/api/auth/google", googleAuth);
   app.get("/api/auth/profile", authenticateToken, getUserProfile);
   app.put("/api/auth/profile", authenticateToken, updateUserProfile);
+  app.post("/api/auth/logout", logout);
 
   // Email verification routes
   app.post("/api/auth/send-verification", sendEmailVerification);
@@ -699,12 +706,26 @@ export function createServer() {
   app.get("/api/properties", getProperties);
   app.get("/api/properties/featured", getFeaturedProperties);
   app.get("/api/properties/:id", getPropertyById);
-  app.post(
-    "/api/properties",
-    authenticateToken,
-    upload.array("images", 10),
-    createProperty,
-  );
+  // Wrap upload to catch Multer errors (e.g., file too large) and respond gracefully
+  const imagesUpload = upload.array("images", 10);
+  app.post("/api/properties", authenticateToken, (req, res, next) => {
+    imagesUpload(req, res, (err: any) => {
+      if (err) {
+        const msg = String(err?.message || "");
+        if (
+          msg.toLowerCase().includes("file too large") ||
+          err.name === "MulterError"
+        ) {
+          return res.status(413).json({
+            success: false,
+            error: "One or more images are too large. Max 10MB per image.",
+          });
+        }
+        return next(err);
+      }
+      return createProperty(req as any, res as any, next as any);
+    });
+  });
 
   // User property management routes
   app.get("/api/user/properties", authenticateToken, getUserProperties);
@@ -803,6 +824,23 @@ export function createServer() {
     uploadCategoryIcon,
     handleIconUpload,
   );
+
+  // ADMIN Category Content routes
+  app.get(
+    "/api/admin/categories/:id/content",
+    authenticateToken,
+    requireAdmin,
+    getAdminCategoryContent,
+  );
+  app.put(
+    "/api/admin/categories/:id/content",
+    authenticateToken,
+    requireAdmin,
+    upsertAdminCategoryContent,
+  );
+
+  // PUBLIC Category content
+  app.get("/api/categories/:slug/content", getPublicCategoryContent);
 
   // ADMIN Subcategory routes
   app.get(
@@ -2150,22 +2188,18 @@ export function createServer() {
       if (!res.headersSent) {
         if (err && err.name === "MulterError") {
           // Multer-specific errors (e.g., file too large)
-          return res
-            .status(400)
-            .json({
-              success: false,
-              error: err.message || "File upload error",
-            });
+          return res.status(400).json({
+            success: false,
+            error: err.message || "File upload error",
+          });
         }
 
         // Custom invalid file type error
         if (err && err.code === "INVALID_FILE_TYPE") {
-          return res
-            .status(400)
-            .json({
-              success: false,
-              error: err.message || "Invalid file type",
-            });
+          return res.status(400).json({
+            success: false,
+            error: err.message || "Invalid file type",
+          });
         }
 
         // CORS errors and others
@@ -2173,12 +2207,10 @@ export function createServer() {
           return res.status(403).json({ success: false, error: err.message });
         }
 
-        return res
-          .status(500)
-          .json({
-            success: false,
-            error: err && err.message ? err.message : "Internal server error",
-          });
+        return res.status(500).json({
+          success: false,
+          error: err && err.message ? err.message : "Internal server error",
+        });
       }
       next(err);
     });
@@ -2191,12 +2223,10 @@ export function createServer() {
         err && err.message ? err.message : err,
       );
       if (!res.headersSent) {
-        return res
-          .status(500)
-          .json({
-            success: false,
-            error: err && err.message ? err.message : "Internal server error",
-          });
+        return res.status(500).json({
+          success: false,
+          error: err && err.message ? err.message : "Internal server error",
+        });
       }
       next(err);
     });

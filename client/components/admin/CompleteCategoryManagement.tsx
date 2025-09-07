@@ -289,6 +289,20 @@ export default function CompleteCategoryManagement() {
 
     try {
       const { api } = await import("@/lib/api");
+
+      // Pre-check: prevent delete when subcategories exist
+      const pre = await api.get(
+        `admin/subcategories/by-category/${categoryId}`,
+        token,
+      );
+      const subs = Array.isArray(pre?.data?.data) ? pre.data.data : [];
+      if (subs.length > 0) {
+        setError(
+          `Cannot delete category. It has ${subs.length} subcategories. Delete subcategories first.`,
+        );
+        return;
+      }
+
       const res = await api.delete(`admin/categories/${categoryId}`, token);
 
       if (res && res.data && res.data.success) {
@@ -296,9 +310,9 @@ export default function CompleteCategoryManagement() {
       } else {
         setError(res?.data?.error || "Failed to delete category");
       }
-    } catch (error) {
-      console.error("Error deleting category:", error);
-      setError("Failed to delete category");
+    } catch (error: any) {
+      console.error("Error deleting category:", error?.message || error);
+      setError(error?.message || "Failed to delete category");
     }
   };
 

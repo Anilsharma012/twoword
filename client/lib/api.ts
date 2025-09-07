@@ -77,9 +77,9 @@ const environment = detectEnvironment();
 
 export const API_CONFIG = {
   baseUrl: API_BASE_URL,
-  timeout: environment === "development" ? 8000 : 15000, // Reduced timeout for faster fallback
-  retryAttempts: 2, // Reduced retry attempts
-  retryDelay: 1000, // 1 second
+  timeout: environment === "development" ? 10000 : 18000,
+  retryAttempts: 3,
+  retryDelay: 1200,
   environment,
 };
 // ⬇️ add this small helper near the top of the file
@@ -146,9 +146,17 @@ export const apiRequest = async (
   }
 
   const controller = new AbortController();
-  // Allow some endpoints (chat unread count) a longer timeout
-  const effectiveTimeout = endpoint.includes("chat/unread-count")
-    ? Math.max(API_CONFIG.timeout, 30000)
+  // Allow some endpoints a longer timeout
+  const longerEndpoints = [
+    "chat/unread-count",
+    "notifications/unread-count",
+    "banners",
+    "properties/featured",
+    "properties",
+  ];
+  const needsLonger = longerEndpoints.some((k) => endpoint.includes(k));
+  let effectiveTimeout = needsLonger
+    ? Math.max(API_CONFIG.timeout, 25000)
     : API_CONFIG.timeout;
 
   // Extend timeout for uploads and category admin operations
@@ -164,47 +172,78 @@ export const apiRequest = async (
     ? Math.max(effectiveTimeout, 45000)
     : effectiveTimeout;
 
-  // In Builder preview without a configured base URL, use a shorter timeout to fail fast
+  // In Builder preview without a configured base URL, still allow reasonable time
   if (
     typeof window !== "undefined" &&
     window.location.hostname.includes("projects.builder.codes") &&
     !API_CONFIG.baseUrl
   ) {
-    finalTimeout = Math.min(finalTimeout, 8000);
+    finalTimeout = Math.max(finalTimeout, 12000);
   }
 
   const timeoutId = setTimeout(() => {
     try {
-      // Abort with a reason when supported for better diagnostics
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      if (typeof controller.abort === "function") {
-        try {
-          // some browsers support abort with reason
-          controller.abort(new Error("timeout"));
-        } catch {
-          controller.abort();
-        }
-      } else {
-        controller.abort();
-      }
+      // Use plain abort for maximum compatibility with instrumented fetch wrappers
+      controller.abort();
     } catch (e) {
       // swallow
     }
   }, finalTimeout);
 
+  // XHR fallback for environments where fetch may be intercepted or blocked
+  const xhrFallback = () =>
+    new Promise<{ ok: boolean; status: number; data: any }>((resolve) => {
+      try {
+        const method = String(options.method || "GET").toUpperCase();
+        const callerHeaders = (options.headers as Record<string, string>) ?? {};
+        const stored = getStoredToken();
+        const headers: Record<string, string> = { ...callerHeaders };
+        if (stored && !("Authorization" in headers)) {
+          headers.Authorization = `Bearer ${stored}`;
+        }
+        const xhr = new XMLHttpRequest();
+        xhr.open(method, url, true);
+        Object.entries(headers).forEach(([k, v]) => xhr.setRequestHeader(k, v));
+        xhr.timeout = finalTimeout;
+        xhr.onreadystatechange = () => {
+          if (xhr.readyState === 4) {
+            let parsed: any = {};
+            try {
+              parsed = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+            } catch {
+              parsed = { raw: xhr.responseText };
+            }
+            resolve({
+              ok: xhr.status >= 200 && xhr.status < 300,
+              status: xhr.status,
+              data: parsed,
+            });
+          }
+        };
+        xhr.ontimeout = () =>
+          resolve({ ok: false, status: 408, data: { error: "Request timeout" } });
+        xhr.onerror = () =>
+          resolve({ ok: false, status: 0, data: { error: "Network error" } });
+        const body = (options as any).body ?? null;
+        xhr.send(body || null);
+      } catch (e: any) {
+        resolve({ ok: false, status: 0, data: { error: e?.message || "Network error" } });
+      }
+    });
+
   try {
     const callerHeaders = (options.headers as Record<string, string>) ?? {};
     const stored = getStoredToken();
+    const method = String(options.method || "GET").toUpperCase();
 
-    // Build default headers but avoid forcing Content-Type for FormData or Blob bodies
+    // Build default headers; avoid forcing Content-Type for GET/HEAD or FormData bodies
     const defaultHeaders: Record<string, string> = {};
     const bodyIsFormData =
       options.body &&
       typeof FormData !== "undefined" &&
       options.body instanceof FormData;
 
-    if (!bodyIsFormData) {
+    if (!bodyIsFormData && method !== "GET" && method !== "HEAD" && options.body) {
       defaultHeaders["Content-Type"] = "application/json";
     }
 
@@ -217,6 +256,8 @@ export const apiRequest = async (
       signal: controller.signal,
       headers: { ...defaultHeaders, ...callerHeaders },
       credentials: "include",
+      mode: "cors",
+      cache: (options as any).cache || "no-store",
     });
 
     clearTimeout(timeoutId);
@@ -254,17 +295,22 @@ export const apiRequest = async (
   } catch (error: any) {
     clearTimeout(timeoutId);
 
+    // If fetch failed (often instrumented as TypeError: Failed to fetch), try XHR fallback once
+    const msg = String(error?.message || "").toLowerCase();
+    if (msg.includes("failed to fetch") || msg.includes("network")) {
+      try {
+        const res = await xhrFallback();
+        if (res.status !== 0) {
+          return { data: res.data, status: res.status, ok: res.ok };
+        }
+      } catch {}
+    }
+
     const retriable =
       error?.name === "AbortError" ||
-      String(error?.message || "")
-        .toLowerCase()
-        .includes("timeout") ||
-      String(error?.message || "")
-        .toLowerCase()
-        .includes("failed to fetch") ||
-      String(error?.message || "")
-        .toLowerCase()
-        .includes("network error");
+      String(error?.message || "").toLowerCase().includes("timeout") ||
+      msg.includes("failed to fetch") ||
+      msg.includes("network error");
 
     if (retriable && retryCount < API_CONFIG.retryAttempts) {
       // backoff delay
@@ -275,7 +321,7 @@ export const apiRequest = async (
     if (error && error.name === "AbortError") {
       throw new Error(`Request timeout after ${finalTimeout}ms`);
     }
-    if (error.message?.includes("Failed to fetch")) {
+    if (msg.includes("failed to fetch")) {
       throw new Error(`Network error: Unable to connect to server at ${url}`);
     }
     // If the abort was triggered with a reason, provide that reason

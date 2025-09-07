@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { createApiUrl } from "../lib/api";
+import { createApiUrl, adminApi, api } from "../lib/api";
 import AdminLayout from "../components/AdminLayout";
 import {
   BarChart3,
@@ -268,35 +268,9 @@ export default function Admin() {
         const testUrl = createApiUrl("ping");
         console.log("🎯 Testing API endpoint:", testUrl);
 
-        // Try a simple fetch to public health endpoint with a reasonable timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          console.log("⏰ Request timeout after 10 seconds");
-          controller.abort();
-        }, 10000);
-
-        const response = await fetch(testUrl, {
-          headers: {
-            "Cache-Control": "no-cache",
-            Pragma: "no-cache",
-          },
-          signal: controller.signal,
-          cache: "no-cache",
-          credentials: "include",
-        });
-
-        clearTimeout(timeoutId);
-
-        console.log("📡 Response received:", {
-          status: response.status,
-          statusText: response.statusText,
-          ok: response.ok,
-          url: response.url,
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+        // Use centralized API (with retries/fallbacks)
+        const { data: pingData } = await api.get("ping");
+        console.log("📡 Ping response:", pingData);
 
         // If we get here, connectivity is working
         console.log("✅ Connectivity test passed (ping)");
@@ -324,7 +298,7 @@ export default function Admin() {
           url: createApiUrl("admin/stats"),
           type: typeof error,
         };
-        console.error("⚠️ Connectivity test failed: " + JSON.stringify(detail));
+        console.error("⚠️ Connectivity test failed:", detail);
 
         // Determine the type of error and respond accordingly
         if (error.name === "AbortError") {
@@ -407,25 +381,8 @@ export default function Admin() {
     // Fetch stats with enhanced error handling
     try {
       console.log("Fetching admin stats...");
-      const statsUrl = createApiUrl("admin/stats");
-      console.log("📊 Stats URL:", statsUrl);
-
-      const statsResponse = await fetch(statsUrl, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        cache: "no-cache",
-        credentials: "include",
-      });
-
-      console.log("📊 Stats response:", {
-        status: statsResponse.status,
-        statusText: statsResponse.statusText,
-        ok: statsResponse.ok,
-      });
-
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json();
+      try {
+        const statsData = await adminApi.getStats(token);
         console.log("Stats data received:", statsData);
         if (statsData.success) {
           setStats(statsData.data);
@@ -433,20 +390,20 @@ export default function Admin() {
           console.error("Stats fetch failed:", statsData.error);
           errors.push("Stats API failed");
         }
-      } else if (statsResponse.status === 401 || statsResponse.status === 403) {
-        console.warn("Stats unauthorized; switching to safe mode");
-        loadMockData();
-        return;
-      } else if (statsResponse.status === 503) {
-        console.log("Database still connecting, will retry...");
-        errors.push("Database connecting");
-      } else {
-        console.error(
-          "Stats response not ok:",
-          statsResponse.status,
-          statsResponse.statusText,
-        );
-        errors.push(`Stats API error: ${statsResponse.status}`);
+      } catch (err: any) {
+        const msg = String(err?.message || "");
+        if (msg.includes("401") || msg.includes("403")) {
+          console.warn("Stats unauthorized; switching to safe mode");
+          loadMockData();
+          return;
+        }
+        if (msg.includes("503")) {
+          console.log("Database still connecting, will retry...");
+          errors.push("Database connecting");
+        } else {
+          console.error("Stats error:", err);
+          errors.push(msg || "Stats API error");
+        }
       }
     } catch (error) {
       console.error("Error fetching stats:", {
@@ -468,12 +425,8 @@ export default function Admin() {
     // Fetch users with individual error handling
     try {
       console.log("Fetching admin users...");
-      const usersResponse = await fetch(createApiUrl("admin/users?limit=10"), {
-        credentials: "include",
-      });
-
-      if (usersResponse.ok) {
-        const usersData = await usersResponse.json();
+      try {
+        const usersData = await adminApi.getUsers(token, 10);
         console.log("Users data received:", usersData);
         if (usersData.success) {
           setUsers(usersData.data.users);
@@ -481,20 +434,20 @@ export default function Admin() {
           console.error("Users fetch failed:", usersData.error);
           errors.push("Users API failed");
         }
-      } else if (usersResponse.status === 401 || usersResponse.status === 403) {
-        console.warn("Users unauthorized; switching to safe mode");
-        loadMockData();
-        return;
-      } else if (usersResponse.status === 503) {
-        console.log("Database still connecting for users API, will retry...");
-        errors.push("Database connecting");
-      } else {
-        console.error(
-          "Users response not ok:",
-          usersResponse.status,
-          usersResponse.statusText,
-        );
-        errors.push(`Users API error: ${usersResponse.status}`);
+      } catch (err: any) {
+        const msg = String(err?.message || "");
+        if (msg.includes("401") || msg.includes("403")) {
+          console.warn("Users unauthorized; switching to safe mode");
+          loadMockData();
+          return;
+        }
+        if (msg.includes("503")) {
+          console.log("Database still connecting for users API, will retry...");
+          errors.push("Database connecting");
+        } else {
+          console.error("Users error:", err);
+          errors.push(msg || "Users API error");
+        }
       }
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -504,15 +457,8 @@ export default function Admin() {
     // Fetch properties with individual error handling
     try {
       console.log("Fetching admin properties...");
-      const propertiesResponse = await fetch(
-        createApiUrl("admin/properties?limit=10"),
-        {
-          credentials: "include",
-        },
-      );
-
-      if (propertiesResponse.ok) {
-        const propertiesData = await propertiesResponse.json();
+      try {
+        const propertiesData = await adminApi.getProperties(token, 10);
         console.log("Properties data received:", propertiesData);
         if (propertiesData.success) {
           setProperties(propertiesData.data.properties);
@@ -520,20 +466,15 @@ export default function Admin() {
           console.error("Properties fetch failed:", propertiesData.error);
           errors.push("Properties API failed");
         }
-      } else if (
-        propertiesResponse.status === 401 ||
-        propertiesResponse.status === 403
-      ) {
-        console.warn("Properties unauthorized; switching to safe mode");
-        loadMockData();
-        return;
-      } else {
-        console.error(
-          "Properties response not ok:",
-          propertiesResponse.status,
-          propertiesResponse.statusText,
-        );
-        errors.push(`Properties API error: ${propertiesResponse.status}`);
+      } catch (err: any) {
+        const msg = String(err?.message || "");
+        if (msg.includes("401") || msg.includes("403")) {
+          console.warn("Properties unauthorized; switching to safe mode");
+          loadMockData();
+          return;
+        }
+        console.error("Properties error:", err);
+        errors.push(msg || "Properties API error");
       }
     } catch (error) {
       console.error("Error fetching properties:", error);
@@ -1098,8 +1039,15 @@ export default function Admin() {
           return (
             <div className="p-6">
               <h3 className="text-lg font-semibold mb-2">Countries</h3>
-              <p className="text-sm text-gray-600 mb-4">This section moved to dedicated page.</p>
-              <a className="text-[#C70000] underline" href="/admin/locations/countries">Go to Countries</a>
+              <p className="text-sm text-gray-600 mb-4">
+                This section moved to dedicated page.
+              </p>
+              <a
+                className="text-[#C70000] underline"
+                href="/admin/locations/countries"
+              >
+                Go to Countries
+              </a>
             </div>
           );
         case "states":

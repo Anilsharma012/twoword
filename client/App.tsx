@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import { FirebaseAuthProvider } from "./hooks/useFirebaseAuth";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -76,6 +76,8 @@ import TestChat from "./pages/TestChat";
 import Step3Test from "./pages/Step3Test";
 import NetworkStatus from "./components/NetworkStatus";
 import AdsenseProvider from "./components/AdsenseProvider";
+import SubcategoriesPage from "./pages/SubcategoriesPage";
+import CategoryContentPage from "./pages/CategoryContentPage";
 
 const queryClient = new QueryClient();
 
@@ -98,6 +100,7 @@ function App() {
                     path="/categories/:category"
                     element={<CategoryProperties />}
                   />
+                  <Route path="/category/:category" element={<CategoryProperties />} />
                   <Route
                     path="/categories/:category/:subcategory"
                     element={<CategoryProperties />}
@@ -144,7 +147,7 @@ function App() {
                   <Route path="/step3-test" element={<Step3Test />} />
                   <Route path="/my-account" element={<MyAccount />} />
                   <Route path="/agents" element={<Agents />} />
-                  {/* <Route path="/login" element={<Login />} /> */}
+                  <Route path="/login" element={<EnhancedUserLogin />} />
                   <Route path="/user-login" element={<EnhancedUserLogin />} />
                   <Route path="/auth" element={<ComprehensiveAuth />} />
                   <Route path="/firebase-auth" element={<FirebaseAuth />} />
@@ -175,6 +178,8 @@ function App() {
                   <Route path="/admin/support" element={<Admin />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/admin/ads/categories" element={<CategoriesPage />} />
+                  <Route path="/admin/ads/categories/:categoryId/subcategories" element={<SubcategoriesPage />} />
+                  <Route path="/admin/ads/categories/:categoryId/content" element={<CategoryContentPage />} />
                   <Route path="/admin/locations/countries" element={<CountriesPage />} />
                   <Route path="/staff/login" element={<StaffLogin />} />
                   <Route path="/staff-dashboard" element={<StaffDashboard />} />
@@ -201,6 +206,8 @@ function App() {
                   <Route path="/terms-conditions" element={<ContentPage />} />
                   <Route path="/refund-policy" element={<ContentPage />} />
                   <Route path="/contact-us" element={<ContentPage />} />
+                  {/* Aliases */}
+                  <Route path="/contact" element={<Navigate to="/p/contact-us" replace />} />
                   {/* Footer Test Page */}
                   <Route path="/footer-test" element={<FooterTest />} />
                   <Route path="/footer-debug" element={<FooterDebugPage />} />

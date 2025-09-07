@@ -12,7 +12,19 @@ export interface AuthenticatedRequest extends Request {
 
 export const authenticateToken: RequestHandler = (req, res, next) => {
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
+  let token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
+
+  // Fallback: read token from httpOnly cookie
+  if (!token) {
+    const cookieHeader = String(req.headers["cookie"] || "");
+    const parts = cookieHeader.split(";").map((s) => s.trim());
+    for (const p of parts) {
+      if (p.startsWith("token=")) {
+        token = decodeURIComponent(p.substring("token=".length));
+        break;
+      }
+    }
+  }
 
   if (!token) {
     return res.status(401).json({
@@ -41,7 +53,11 @@ export const requireAdmin: RequestHandler = (req, res, next) => {
   const userType = (req as any).userType;
   const role = (req as any).role;
 
-  console.log("🔐 Admin middleware check:", { userType, role, userId: (req as any).userId });
+  console.log("🔐 Admin middleware check:", {
+    userType,
+    role,
+    userId: (req as any).userId,
+  });
 
   // Allow admin userType or staff userType with any role
   if (userType !== "admin" && userType !== "staff") {
@@ -85,24 +101,38 @@ export const requirePermission = (permission: string): RequestHandler => {
       const rolePermissions: Record<string, string[]> = {
         super_admin: ["*"], // Super admin has all permissions
         content_manager: [
-          "content.view", "content.create", "content.manage", "blog.manage", "blog.view"
+          "content.view",
+          "content.create",
+          "content.manage",
+          "blog.manage",
+          "blog.view",
         ],
         sales_manager: [
-          "users.view", "sellers.manage", "sellers.verify", "sellers.view",
-          "payments.view", "packages.manage", "ads.view", "analytics.view"
+          "users.view",
+          "sellers.manage",
+          "sellers.verify",
+          "sellers.view",
+          "payments.view",
+          "packages.manage",
+          "ads.view",
+          "analytics.view",
         ],
         support_executive: [
-          "users.view", "support.view", "reports.view", "content.view"
+          "users.view",
+          "support.view",
+          "reports.view",
+          "content.view",
         ],
-        admin: [
-          "content.view", "users.view", "ads.view", "analytics.view"
-        ]
+        admin: ["content.view", "users.view", "ads.view", "analytics.view"],
       };
 
       const userPermissions = rolePermissions[role] || [];
 
       // Check if user has the required permission or super admin access
-      if (userPermissions.includes("*") || userPermissions.includes(permission)) {
+      if (
+        userPermissions.includes("*") ||
+        userPermissions.includes(permission)
+      ) {
         return next();
       }
     }

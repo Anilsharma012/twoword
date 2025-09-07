@@ -115,13 +115,38 @@ export default function EnhancedCategoryManagement() {
 
       const data = res?.data;
       if (data?.success) {
-        const list: Category[] = Array.isArray(data.data)
+        const raw: any[] = Array.isArray(data.data)
           ? data.data
           : Array.isArray(data.data?.categories)
             ? data.data.categories
             : [];
+        // Normalize server fields -> client shape
+        const mapped: Category[] = raw.map((c: any) => ({
+          _id: c._id,
+          name: c.name,
+          slug: c.slug,
+          icon: c.icon ?? c.iconUrl ?? "",
+          description: c.description ?? "",
+          subcategories: Array.isArray(c.subcategories)
+            ? c.subcategories.map((s: any) => ({
+                id: s._id || s.id || s.slug || String(Math.random()),
+                name: s.name,
+                slug: s.slug,
+                description: s.description,
+                image: s.image,
+                count: s.count ?? 0,
+              }))
+            : [],
+          order: c.order ?? c.sortOrder ?? 0,
+          active: c.active ?? c.isActive ?? false,
+          count: c.count ?? c.propertiesCount ?? c.counts?.properties ?? 0,
+        }));
+        const exclude = ["other categories", "new property", "other category"]; // case-insensitive
+        const cleaned = mapped.filter(
+          (c) => !exclude.includes((c.name || "").toLowerCase()),
+        );
         setCategories(
-          list.sort(
+          cleaned.sort(
             (a: Category, b: Category) => (a?.order ?? 0) - (b?.order ?? 0),
           ),
         );
@@ -320,6 +345,19 @@ export default function EnhancedCategoryManagement() {
       return;
 
     try {
+      // Pre-check: prevent delete when subcategories exist to avoid 400
+      const pre = await api.get(
+        `admin/subcategories/by-category/${categoryId}`,
+        token,
+      );
+      const subs = Array.isArray(pre?.data?.data) ? pre.data.data : [];
+      if (subs.length > 0) {
+        setError(
+          `Cannot delete category. It has ${subs.length} subcategories. Delete subcategories first.`,
+        );
+        return;
+      }
+
       const res = await api.delete(`admin/categories/${categoryId}`, token);
       if (res && res.data && res.data.success) {
         setCategories(categories.filter((cat) => cat._id !== categoryId));
@@ -399,6 +437,11 @@ export default function EnhancedCategoryManagement() {
     const safeName = category.name || "";
     const safeDescription = category.description || "";
     const safeSearchTerm = searchTerm || "";
+
+    // Exclude special categories requested by admin
+    const excluded = ["other categories", "new property", "other category"]; // case-insensitive
+    if (excluded.includes(safeName.toLowerCase())) return false;
+
     const matchesSearch =
       safeName.toLowerCase().includes(safeSearchTerm.toLowerCase()) ||
       safeDescription.toLowerCase().includes(safeSearchTerm.toLowerCase());
@@ -577,16 +620,20 @@ export default function EnhancedCategoryManagement() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {category.icon ? (
+                    {category.icon || (category as any).iconUrl ? (
                       <div className="w-8 h-8 bg-red-50 border border-red-100 rounded-lg flex items-center justify-center">
-                        {category.icon.startsWith("http") ? (
+                        {(
+                          category.icon || (category as any).iconUrl
+                        ).startsWith("http") ? (
                           <img
-                            src={category.icon}
+                            src={category.icon || (category as any).iconUrl}
                             alt="Category icon"
                             className="w-6 h-6 object-cover rounded"
                           />
                         ) : (
-                          <span className="text-lg">{category.icon}</span>
+                          <span className="text-lg">
+                            {category.icon || (category as any).iconUrl}
+                          </span>
                         )}
                       </div>
                     ) : (
@@ -706,6 +753,16 @@ export default function EnhancedCategoryManagement() {
                         aria-label="Edit category"
                       >
                         <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          (window.location.href = `/admin/ads/categories/${category._id}/content`)
+                        }
+                        aria-label="Edit content"
+                      >
+                        Content
                       </Button>
                       <Button
                         size="sm"

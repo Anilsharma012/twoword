@@ -7,7 +7,7 @@ import {
   Bed,
   Bath,
 } from "lucide-react";
-import { safeFetch, NetworkError } from "../utils/network-utils";
+import { api } from "@/lib/api";
 
 interface Advertisement {
   _id: string;
@@ -74,87 +74,38 @@ const PropertyAdsSlider: React.FC = () => {
 
         // Try to fetch advertisements first (using banners with home position)
         try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-          const adsResponse = await fetch(
-            "/api/banners?active=true",
-            {
-              signal: controller.signal,
-              headers: {
-                "Cache-Control": "no-cache",
-              },
-            },
-          );
-
-          clearTimeout(timeoutId);
-
-          if (adsResponse.ok) {
-            const adsData = await adsResponse.json();
-            if (
-              adsData.success &&
-              adsData.data &&
-              Array.isArray(adsData.data)
-            ) {
-              const mappedAds: Advertisement[] = adsData.data.map((b: any) => ({
-                _id: b._id || Math.random().toString(36).slice(2),
-                title: b.title,
-                description: "",
-                image: b.imageUrl,
-                link: b.link,
-                position: "homepage_middle",
-                active: b.isActive !== false,
-              }));
-              setAds(mappedAds);
-              console.log("✅ Loaded", mappedAds.length, "home advertisements");
-            }
+          const res = await api.get("banners?active=true");
+          const adsData = res?.data;
+          if (adsData?.success && Array.isArray(adsData.data)) {
+            const mappedAds: Advertisement[] = adsData.data.map((b: any) => ({
+              _id: b._id || Math.random().toString(36).slice(2),
+              title: b.title,
+              description: "",
+              image: b.imageUrl || b.image,
+              link: b.link,
+              position: "homepage_middle",
+              active: b.isActive !== false,
+            }));
+            setAds(mappedAds);
+          } else {
+            setAds([]);
           }
         } catch (error: any) {
-          if (error.name === "AbortError") {
-            console.warn("⏰ Advertisement fetch timed out");
-          } else if (error.message?.includes("Failed to fetch")) {
-            console.warn("🌐 Network issue fetching advertisements");
-          } else {
-            console.warn("⚠️ Failed to fetch advertisements:", error);
-          }
+          // Quietly fall back to properties if banners fail (common on slow networks)
+          setAds([]);
         }
 
         // Fetch featured properties as fallback
         try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-          const propertiesResponse = await fetch("/api/properties/featured", {
-            signal: controller.signal,
-            headers: {
-              "Cache-Control": "no-cache",
-            },
-          });
-
-          clearTimeout(timeoutId);
-          if (propertiesResponse.ok) {
-            const propertiesData = await propertiesResponse.json();
-            if (
-              propertiesData.success &&
-              propertiesData.data &&
-              Array.isArray(propertiesData.data)
-            ) {
-              setProperties(propertiesData.data);
-              console.log(
-                "✅ Loaded",
-                propertiesData.data.length,
-                "featured properties",
-              );
-            }
-          }
-        } catch (error: any) {
-          if (error.name === "AbortError") {
-            console.warn("⏰ Featured properties fetch timed out");
-          } else if (error.message?.includes("Failed to fetch")) {
-            console.warn("🌐 Network issue fetching featured properties");
+          const res = await api.get("properties/featured");
+          const propertiesData = res?.data;
+          if (propertiesData?.success && Array.isArray(propertiesData.data)) {
+            setProperties(propertiesData.data);
           } else {
-            console.warn("⚠️ Failed to fetch featured properties:", error);
+            setProperties([]);
           }
+        } catch {
+          setProperties([]);
         }
       } catch (error) {
         console.error("❌ Error fetching data:", error);
