@@ -77,9 +77,9 @@ const environment = detectEnvironment();
 
 export const API_CONFIG = {
   baseUrl: API_BASE_URL,
-  timeout: environment === "development" ? 8000 : 15000, // Reduced timeout for faster fallback
-  retryAttempts: 2, // Reduced retry attempts
-  retryDelay: 1000, // 1 second
+  timeout: environment === "development" ? 10000 : 18000,
+  retryAttempts: 3,
+  retryDelay: 1200,
   environment,
 };
 // ⬇️ add this small helper near the top of the file
@@ -146,9 +146,16 @@ export const apiRequest = async (
   }
 
   const controller = new AbortController();
-  // Allow some endpoints (chat unread count) a longer timeout
-  const effectiveTimeout = endpoint.includes("chat/unread-count")
-    ? Math.max(API_CONFIG.timeout, 30000)
+  // Allow some endpoints a longer timeout
+  const longerEndpoints = [
+    "chat/unread-count",
+    "banners",
+    "properties/featured",
+    "properties",
+  ];
+  const needsLonger = longerEndpoints.some((k) => endpoint.includes(k));
+  let effectiveTimeout = needsLonger
+    ? Math.max(API_CONFIG.timeout, 25000)
     : API_CONFIG.timeout;
 
   // Extend timeout for uploads and category admin operations
@@ -164,13 +171,13 @@ export const apiRequest = async (
     ? Math.max(effectiveTimeout, 45000)
     : effectiveTimeout;
 
-  // In Builder preview without a configured base URL, use a shorter timeout to fail fast
+  // In Builder preview without a configured base URL, still allow reasonable time
   if (
     typeof window !== "undefined" &&
     window.location.hostname.includes("projects.builder.codes") &&
     !API_CONFIG.baseUrl
   ) {
-    finalTimeout = Math.min(finalTimeout, 8000);
+    finalTimeout = Math.max(finalTimeout, 12000);
   }
 
   const timeoutId = setTimeout(() => {
@@ -196,15 +203,16 @@ export const apiRequest = async (
   try {
     const callerHeaders = (options.headers as Record<string, string>) ?? {};
     const stored = getStoredToken();
+    const method = String(options.method || "GET").toUpperCase();
 
-    // Build default headers but avoid forcing Content-Type for FormData or Blob bodies
+    // Build default headers; avoid forcing Content-Type for GET/HEAD or FormData bodies
     const defaultHeaders: Record<string, string> = {};
     const bodyIsFormData =
       options.body &&
       typeof FormData !== "undefined" &&
       options.body instanceof FormData;
 
-    if (!bodyIsFormData) {
+    if (!bodyIsFormData && method !== "GET" && method !== "HEAD" && options.body) {
       defaultHeaders["Content-Type"] = "application/json";
     }
 
@@ -275,7 +283,7 @@ export const apiRequest = async (
     if (error && error.name === "AbortError") {
       throw new Error(`Request timeout after ${finalTimeout}ms`);
     }
-    if (error.message?.includes("Failed to fetch")) {
+    if (String(error.message || "").toLowerCase().includes("failed to fetch")) {
       throw new Error(`Network error: Unable to connect to server at ${url}`);
     }
     // If the abort was triggered with a reason, provide that reason
