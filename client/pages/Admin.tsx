@@ -298,7 +298,7 @@ export default function Admin() {
           url: createApiUrl("admin/stats"),
           type: typeof error,
         };
-        console.error("⚠️ Connectivity test failed: " + JSON.stringify(detail));
+        console.error("⚠️ Connectivity test failed:", detail);
 
         // Determine the type of error and respond accordingly
         if (error.name === "AbortError") {
@@ -862,7 +862,7 @@ export default function Admin() {
                   <div className="flex-1">
                     <p className="text-sm font-medium">{user.name}</p>
                     <p className="text-xs text-gray-500">
-                      {user.email} ��� {user.userType}
+                      {user.email} • {user.userType}
                     </p>
                   </div>
                   <Badge
