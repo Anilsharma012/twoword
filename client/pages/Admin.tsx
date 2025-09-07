@@ -425,12 +425,8 @@ export default function Admin() {
     // Fetch users with individual error handling
     try {
       console.log("Fetching admin users...");
-      const usersResponse = await fetch(createApiUrl("admin/users?limit=10"), {
-        credentials: "include",
-      });
-
-      if (usersResponse.ok) {
-        const usersData = await usersResponse.json();
+      try {
+        const usersData = await adminApi.getUsers(token, 10);
         console.log("Users data received:", usersData);
         if (usersData.success) {
           setUsers(usersData.data.users);
@@ -438,20 +434,20 @@ export default function Admin() {
           console.error("Users fetch failed:", usersData.error);
           errors.push("Users API failed");
         }
-      } else if (usersResponse.status === 401 || usersResponse.status === 403) {
-        console.warn("Users unauthorized; switching to safe mode");
-        loadMockData();
-        return;
-      } else if (usersResponse.status === 503) {
-        console.log("Database still connecting for users API, will retry...");
-        errors.push("Database connecting");
-      } else {
-        console.error(
-          "Users response not ok:",
-          usersResponse.status,
-          usersResponse.statusText,
-        );
-        errors.push(`Users API error: ${usersResponse.status}`);
+      } catch (err: any) {
+        const msg = String(err?.message || "");
+        if (msg.includes("401") || msg.includes("403")) {
+          console.warn("Users unauthorized; switching to safe mode");
+          loadMockData();
+          return;
+        }
+        if (msg.includes("503")) {
+          console.log("Database still connecting for users API, will retry...");
+          errors.push("Database connecting");
+        } else {
+          console.error("Users error:", err);
+          errors.push(msg || "Users API error");
+        }
       }
     } catch (error) {
       console.error("Error fetching users:", error);
