@@ -134,8 +134,9 @@ export default function PaymentTransactions() {
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed": return <CheckCircle className="h-4 w-4 text-green-600" />;
+    const normalized = status === "completed" ? "paid" : status;
+    switch (normalized) {
+      case "paid": return <CheckCircle className="h-4 w-4 text-green-600" />;
       case "failed": return <XCircle className="h-4 w-4 text-red-600" />;
       case "cancelled": return <XCircle className="h-4 w-4 text-gray-600" />;
       case "pending": return <Clock className="h-4 w-4 text-yellow-600" />;
@@ -144,8 +145,9 @@ export default function PaymentTransactions() {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed": return "bg-green-100 text-green-800";
+    const normalized = status === "completed" ? "paid" : status;
+    switch (normalized) {
+      case "paid": return "bg-green-100 text-green-800";
       case "failed": return "bg-red-100 text-red-800";
       case "cancelled": return "bg-gray-100 text-gray-800";
       case "pending": return "bg-yellow-100 text-yellow-800";
@@ -163,7 +165,7 @@ export default function PaymentTransactions() {
     }
   };
 
-  const updateTransactionStatus = async (transactionId: string, status: "completed" | "failed" | "cancelled") => {
+  const updateTransactionStatus = async (transactionId: string, status: "paid" | "failed" | "cancelled") => {
     if (!token) return;
 
     try {
@@ -209,7 +211,7 @@ export default function PaymentTransactions() {
 
   const stats = {
     totalTransactions: transactions.length,
-    totalRevenue: transactions.filter(t => t.status === "completed" && t.type !== "refund").reduce((sum, t) => sum + t.amount, 0),
+    totalRevenue: transactions.filter(t => (t.status === "paid" || t.status === "completed") && t.type !== "refund").reduce((sum, t) => sum + t.amount, 0),
     pendingTransactions: transactions.filter(t => t.status === "pending").length,
     failedTransactions: transactions.filter(t => t.status === "failed").length,
   };
@@ -313,7 +315,7 @@ export default function PaymentTransactions() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="failed">Failed</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -388,7 +390,7 @@ export default function PaymentTransactions() {
                         variant="outline"
                         className={getStatusColor(transaction.status)}
                       >
-                        {transaction.status}
+                        {(transaction.status === "completed" ? "paid" : transaction.status)}
                       </Badge>
                     </div>
                   </TableCell>
@@ -522,7 +524,7 @@ export default function PaymentTransactions() {
                                   <Button
                                     size="sm"
                                     className="bg-green-600 hover:bg-green-700"
-                                    onClick={() => updateTransactionStatus(selectedTransaction._id, "completed")}
+                                    onClick={() => updateTransactionStatus(selectedTransaction._id, "paid")}
                                   >
                                     <CheckCircle className="h-4 w-4 mr-1" />
                                     Mark as Paid
