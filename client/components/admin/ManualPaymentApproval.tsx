@@ -102,7 +102,7 @@ export default function ManualPaymentApproval() {
       console.log("🔍 Fetching manual payment transactions...");
 
       const response = await fetch(
-        "/api/admin/transactions?status=pending,processing",
+        "/api/admin/transactions",
         {
           headers: {
             Authorization: `Bearer ${token}`,
