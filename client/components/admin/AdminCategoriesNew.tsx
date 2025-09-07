@@ -356,11 +356,28 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
     }
 
     try {
+      const { apiRequest } = await import("@/lib/api");
+
+      // Pre-check: block deletion when subcategories exist
+      const pre = await apiRequest(`admin/subcategories/by-category/${categoryId}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const preData = pre.data as any;
+      const subList = Array.isArray(preData?.data) ? preData.data : [];
+      if (pre.ok && subList.length > 0) {
+        toast({
+          title: "Cannot delete",
+          description: `This category has ${subList.length} subcategories. Delete them first.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Optimistic update
       const categoryToDelete = categories.find((c) => c._id === categoryId);
       setCategories((prev) => prev.filter((c) => c._id !== categoryId));
 
-      const { apiRequest } = await import("@/lib/api");
       const resp = await apiRequest(`admin/categories/${categoryId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -386,13 +403,13 @@ export default function AdminCategoriesNew({ token }: AdminCategoriesProps) {
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       // Revert optimistic update on error
       fetchCategories();
-      console.error("Error deleting category:", error);
+      console.error("Error deleting category:", error?.message || error);
       toast({
         title: "Error",
-        description: "Failed to delete category",
+        description: error?.message || "Failed to delete category",
         variant: "destructive",
       });
     }
