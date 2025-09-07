@@ -115,13 +115,37 @@ export default function EnhancedCategoryManagement() {
 
       const data = res?.data;
       if (data?.success) {
-        const list: Category[] = Array.isArray(data.data)
+        const raw: any[] = Array.isArray(data.data)
           ? data.data
           : Array.isArray(data.data?.categories)
             ? data.data.categories
             : [];
+        // Normalize server fields -> client shape
+        const mapped: Category[] = raw.map((c: any) => ({
+          _id: c._id,
+          name: c.name,
+          slug: c.slug,
+          icon: c.icon ?? c.iconUrl ?? "",
+          description: c.description ?? "",
+          subcategories: Array.isArray(c.subcategories)
+            ? c.subcategories.map((s: any) => ({
+                id: s._id || s.id || s.slug || String(Math.random()),
+                name: s.name,
+                slug: s.slug,
+                description: s.description,
+                image: s.image,
+                count: s.count ?? 0,
+              }))
+            : [],
+          order: c.order ?? c.sortOrder ?? 0,
+          active: c.active ?? c.isActive ?? false,
+          count:
+            c.count ?? c.propertiesCount ?? c.counts?.properties ?? 0,
+        }));
+        const exclude = ["other categories", "new property", "other category"]; // case-insensitive
+        const cleaned = mapped.filter((c) => !exclude.includes((c.name || "").toLowerCase()));
         setCategories(
-          list.sort(
+          cleaned.sort(
             (a: Category, b: Category) => (a?.order ?? 0) - (b?.order ?? 0),
           ),
         );
