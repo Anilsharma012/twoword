@@ -457,15 +457,8 @@ export default function Admin() {
     // Fetch properties with individual error handling
     try {
       console.log("Fetching admin properties...");
-      const propertiesResponse = await fetch(
-        createApiUrl("admin/properties?limit=10"),
-        {
-          credentials: "include",
-        },
-      );
-
-      if (propertiesResponse.ok) {
-        const propertiesData = await propertiesResponse.json();
+      try {
+        const propertiesData = await adminApi.getProperties(token, 10);
         console.log("Properties data received:", propertiesData);
         if (propertiesData.success) {
           setProperties(propertiesData.data.properties);
@@ -473,20 +466,15 @@ export default function Admin() {
           console.error("Properties fetch failed:", propertiesData.error);
           errors.push("Properties API failed");
         }
-      } else if (
-        propertiesResponse.status === 401 ||
-        propertiesResponse.status === 403
-      ) {
-        console.warn("Properties unauthorized; switching to safe mode");
-        loadMockData();
-        return;
-      } else {
-        console.error(
-          "Properties response not ok:",
-          propertiesResponse.status,
-          propertiesResponse.statusText,
-        );
-        errors.push(`Properties API error: ${propertiesResponse.status}`);
+      } catch (err: any) {
+        const msg = String(err?.message || "");
+        if (msg.includes("401") || msg.includes("403")) {
+          console.warn("Properties unauthorized; switching to safe mode");
+          loadMockData();
+          return;
+        }
+        console.error("Properties error:", err);
+        errors.push(msg || "Properties API error");
       }
     } catch (error) {
       console.error("Error fetching properties:", error);
