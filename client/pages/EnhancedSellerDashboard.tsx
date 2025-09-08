@@ -624,9 +624,9 @@ export default function EnhancedSellerDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {properties.slice(0, 3).map((property) => (
+                    {properties.slice(0, 3).map((property, idx) => (
                       <div
-                        key={property._id}
+                        key={(property as any)._id || (property as any).id || property.title || idx}
                         className="border border-gray-200 rounded-lg p-4"
                       >
                         <div className="flex items-start justify-between">
@@ -692,9 +692,9 @@ export default function EnhancedSellerDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {notifications.map((notification) => (
+                    {notifications.map((notification, idx) => (
                       <div
-                        key={notification._id}
+                        key={(notification as any)._id || notification.title || idx}
                         className={`border rounded-lg p-4 ${
                           notification.isRead
                             ? "bg-gray-50"
@@ -792,8 +792,8 @@ export default function EnhancedSellerDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {properties.map((property) => (
-                        <TableRow key={property._id}>
+                      {properties.map((property, idx) => (
+                        <TableRow key={(property as any)._id || (property as any).id || property.title || idx}>
                           <TableCell>
                             <div>
                               <div className="font-medium">
@@ -882,9 +882,9 @@ export default function EnhancedSellerDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {messages.map((message) => (
+                    {messages.map((message, idx) => (
                       <div
-                        key={message._id}
+                        key={(message as any)._id || message.timestamp || idx}
                         className={`border rounded-lg p-4 ${
                           message.isRead
                             ? "bg-gray-50"
@@ -1018,8 +1018,8 @@ export default function EnhancedSellerDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {packages.map((pkg) => (
-                      <div key={pkg._id} className="border rounded-lg p-4">
+                    {packages.map((pkg, idx) => (
+                      <div key={(pkg as any)._id || pkg.name || idx} className="border rounded-lg p-4">
                         <div className="flex items-center justify-between mb-3">
                           <h3 className="font-bold text-lg">{pkg.name}</h3>
                           <Badge
@@ -1076,9 +1076,9 @@ export default function EnhancedSellerDashboard() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {payments.map((payment) => (
+                      {payments.map((payment, idx) => (
                         <div
-                          key={payment._id}
+                          key={(payment as any)._id || payment.transactionId || idx}
                           className="border rounded-lg p-3"
                         >
                           <div className="flex items-center justify-between">
