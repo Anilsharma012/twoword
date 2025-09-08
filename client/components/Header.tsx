@@ -35,6 +35,17 @@ export default function Header() {
     }
   };
 
+  const { currentCity, openModal } = useLocationPreference();
+  const { isAuthenticated } = useFirebaseAuth();
+  const openedOnceRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (isAuthenticated && !currentCity && !openedOnceRef.current) {
+      openedOnceRef.current = true;
+      try { setTimeout(() => openModal(), 0); } catch {}
+    }
+  }, [isAuthenticated, currentCity, openModal]);
+
   return (
     <header className="bg-[#C70000] text-white sticky top-0 z-50">
       {/* Top Bar */}
@@ -49,8 +60,13 @@ export default function Header() {
         </div>
 
         <div className="flex items-center space-x-3">
-          <button className="p-2">
-            <MapPin className="h-5 w-5" />
+          <button
+            aria-label="Select location"
+            onClick={openModal}
+            className="flex items-center gap-1 bg-white/15 text-white border border-white/30 rounded-full px-3 py-1 text-sm hover:bg-white/25"
+          >
+            <MapPin className="h-4 w-4" />
+            <span>{currentCity?.cityName || "Select location"}</span>
           </button>
           <button
             className="p-2 md:hidden"
