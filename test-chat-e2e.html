@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>E2E Chat Flow Test</title>
+    <style>
+      body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+      h1 { margin: 0 0 8px; }
+      .card { background: #fff; border-radius: 8px; padding: 16px; margin: 16px 0; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+      .row { display: flex; gap: 12px; flex-wrap: wrap; }
+      button { background: #c70000; color: #fff; border: 0; padding: 10px 18px; border-radius: 6px; cursor: pointer; }
+      button:disabled { background: #bbb; cursor: not-allowed; }
+      .log { background: #111827; color: #e5e7eb; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; padding: 12px; border-radius: 6px; white-space: pre-wrap; max-height: 380px; overflow: auto; }
+      .ok { color: #10b981; }
+      .err { color: #ef4444; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>End-to-End Chat Flow</h1>
+      <p>This runs a full flow: create Seller and Buyer accounts, create a property for Seller, then create a conversation and exchange messages.</p>
+      <div class="row">
+        <button id="runBtn" onclick="runFlow()">Run E2E Test</button>
+        <button onclick="clearLog()">Clear Log</button>
+      </div>
+      <pre class="log" id="log"></pre>
+    </div>
+
+    <script>
+      const logEl = document.getElementById('log');
+      function log(msg, cls) { const line = (new Date()).toISOString()+" "+msg+"\n"; logEl.insertAdjacentHTML('beforeend', `<span class="${cls||''}">${line}</span>`); logEl.scrollTop = logEl.scrollHeight; console.log(msg); }
+      function clearLog(){ logEl.textContent=''; }
+
+      async function api(path, { method='GET', token, json, form }={}) {
+        const url = path.startsWith('/') ? path : `/api/${path}`;
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        let body;
+        if (json) { headers['Content-Type'] = 'application/json'; body = JSON.stringify(json); }
+        if (form) { body = form; }
+        const res = await fetch(url, { method, headers, body, credentials: 'include' });
+        let data = {};
+        try { data = await res.json(); } catch { data = {}; }
+        return { ok: res.ok, status: res.status, data };
+      }
+
+      function uniqueSuffix(){ return Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36); }
+
+      async function runFlow(){
+        const btn = document.getElementById('runBtn'); btn.disabled = true; clearLog();
+        try {
+          // 1) Register Seller
+          const sfx = uniqueSuffix();
+          const seller = {
+            name: 'Seller '+sfx,
+            email: `seller_${sfx}@test.com`,
+            phone: `78${Math.floor(10000000+Math.random()*89999999)}`,
+            password: 'Passw0rd!',
+            userType: 'seller'
+          };
+          log('Registering Seller: '+seller.email);
+          let r = await api('auth/register', { method:'POST', json: seller });
+          if (!r.ok || !r.data?.success) throw new Error('Seller register failed: '+(r.data?.error||r.status));
+          const sellerToken = r.data.data.token; log('Seller registered ✔', 'ok');
+
+          // 2) Register Buyer
+          const buyer = {
+            name: 'Buyer '+sfx,
+            email: `buyer_${sfx}@test.com`,
+            phone: `79${Math.floor(10000000+Math.random()*89999999)}`,
+            password: 'Passw0rd!',
+            userType: 'buyer'
+          };
+          log('Registering Buyer: '+buyer.email);
+          r = await api('auth/register', { method:'POST', json: buyer });
+          if (!r.ok || !r.data?.success) throw new Error('Buyer register failed: '+(r.data?.error||r.status));
+          const buyerToken = r.data.data.token; log('Buyer registered ✔', 'ok');
+
+          // 3) Seller creates a Property (multipart/form-data)
+          const fd = new FormData();
+          fd.append('title', 'Test Property '+sfx);
+          fd.append('description', 'Auto-created for chat e2e');
+          fd.append('price', '1500000');
+          fd.append('priceType', 'fixed');
+          fd.append('propertyType', 'residential');
+          fd.append('subCategory', 'apartment');
+          fd.append('location', JSON.stringify({ address: 'Rohtak', city: 'Rohtak', state: 'Haryana' }));
+          fd.append('specifications', JSON.stringify({ bedrooms: 2, bathrooms: 2, area: 900 }));
+          fd.append('amenities', JSON.stringify(['parking']));
+          fd.append('contactInfo', JSON.stringify({ name: seller.name, phone: seller.phone, email: seller.email }));
+          log('Creating property as Seller...');
+          r = await api('properties', { method:'POST', token: sellerToken, form: fd });
+          if (!r.ok || !r.data?.success) throw new Error('Property create failed: '+(r.data?.error||r.status));
+          const propertyId = r.data.data._id; log('Property created: '+propertyId, 'ok');
+
+          // 4) Buyer creates/fetches conversation for the property
+          log('Creating/finding conversation as Buyer...');
+          r = await api(`conversations/find-or-create?propertyId=${propertyId}`, { method:'POST', token: buyerToken });
+          if (!r.ok || !r.data?.success) throw new Error('Conversation create failed: '+(r.data?.error||r.status));
+          const conversationId = r.data.data._id; log('Conversation ready: '+conversationId, 'ok');
+
+          // 5) Buyer sends message
+          log('Buyer sends: "Hello, I am interested"');
+          r = await api(`conversations/${conversationId}/messages`, { method:'POST', token: buyerToken, json: { text: 'Hello, I am interested' } });
+          if (!r.ok || !r.data?.success) throw new Error('Buyer message failed: '+(r.data?.error||r.status));
+          log('Buyer message sent ✔', 'ok');
+
+          // 6) Seller replies
+          log('Seller replies: "Sure, let\'s talk"');
+          r = await api(`conversations/${conversationId}/messages`, { method:'POST', token: sellerToken, json: { text: "Sure, let's talk" } });
+          if (!r.ok || !r.data?.success) throw new Error('Seller message failed: '+(r.data?.error||r.status));
+          log('Seller reply sent ✔', 'ok');
+
+          // 7) Fetch messages to show transcript
+          log('Fetching messages transcript...');
+          r = await api(`conversations/${conversationId}/messages`, { method:'GET', token: buyerToken });
+          if (!r.ok || !r.data?.success) throw new Error('Fetch messages failed: '+(r.data?.error||r.status));
+          const messages = r.data.data?.messages || r.data.data || []; // support both shapes
+          log('Transcript:\n'+messages.map(m => `- ${m.senderName||m.senderType}: ${m.text||m.message}`).join('\n'), 'ok');
+
+          log('E2E Chat Flow SUCCESS ✔', 'ok');
+        } catch (e) {
+          log('E2E Chat Flow FAILED: '+(e?.message||e), 'err');
+        } finally {
+          btn.disabled = false;
+        }
+      }
+    </script>
+  </body>
+</html>
