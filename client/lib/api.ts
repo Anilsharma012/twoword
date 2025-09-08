@@ -201,8 +201,8 @@ export const apiRequest = async (
 
   const timeoutId = setTimeout(() => {
     try {
-      // Use plain abort for maximum compatibility with instrumented fetch wrappers
-      controller.abort();
+      // Provide a reason to avoid "signal is aborted without reason"
+      controller.abort("timeout");
     } catch (e) {
       // swallow
     }
