@@ -9,6 +9,7 @@ import { AuthProvider } from "./hooks/useAuth";
 import { FirebaseAuthProvider } from "./hooks/useFirebaseAuth";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PageUpdateNotification from "./components/PageUpdateNotification";
+import { LocationProvider } from "./hooks/useLocationPreference";
 import "./lib/global-api"; // Make API helper globally available
 import Index from "./pages/Index";
 import FirebaseAuth from "./pages/FirebaseAuth";
@@ -92,6 +93,7 @@ function App() {
               <Sonner />
               <NetworkStatus />
               {import.meta.env.VITE_ADSENSE_CLIENT ? <AdsenseProvider /> : null}
+              <LocationProvider>
               <BrowserRouter>
                 <Routes>
                   <Route path="/" element={<Index />} />
@@ -218,6 +220,7 @@ function App() {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
+              </LocationProvider>
 
               {/* Global Components */}
               <PageUpdateNotification />
