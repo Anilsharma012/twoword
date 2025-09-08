@@ -17,8 +17,12 @@ export interface BlogPost {
   };
   category: string;
   tags: string[];
-  status: "draft" | "published" | "archived";
+  status: "draft" | "pending_review" | "published" | "archived";
   featured: boolean;
+  seo?: {
+    title?: string;
+    description?: string;
+  };
   publishedAt?: Date;
   views: number;
   createdAt: Date;
@@ -313,6 +317,154 @@ export const updateBlogPost: RequestHandler = async (req, res) => {
       success: false,
       error: "Failed to update blog post",
     });
+  }
+};
+
+// Seller: list own blog posts
+export const getSellerBlogPosts: RequestHandler = async (req, res) => {
+  try {
+    const db = getDatabase();
+    // @ts-ignore
+    const userId = (req as any).userId as string;
+    const posts = await db
+      .collection("blog_posts")
+      .find({ "author.id": userId })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    const response: ApiResponse<BlogPost[]> = { success: true, data: posts as BlogPost[] };
+    res.json(response);
+  } catch (error) {
+    console.error("Error fetching seller blog posts:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch posts" });
+  }
+};
+
+// Seller: create post -> pending_review or draft
+export const createSellerBlogPost: RequestHandler = async (req, res) => {
+  try {
+    const db = getDatabase();
+    // @ts-ignore
+    const userId = (req as any).userId as string;
+    // @ts-ignore
+    const email = (req as any).email as string;
+
+    const {
+      title,
+      slug: incomingSlug,
+      content,
+      excerpt,
+      featuredImage,
+      category,
+      tags = [],
+      submit = false,
+      seo = {},
+    } = req.body || {};
+
+    const makeSlug = (s: string) =>
+      (s || "")
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
+
+    const slug = incomingSlug && incomingSlug.trim() ? makeSlug(incomingSlug) : makeSlug(title);
+
+    // Ensure unique slug
+    const existing = await db.collection("blog_posts").findOne({ slug });
+    if (existing) {
+      return res.status(400).json({ success: false, error: "Slug already exists" });
+    }
+
+    const now = new Date();
+    const post: Omit<BlogPost, "_id"> = {
+      title,
+      slug,
+      content,
+      excerpt,
+      featuredImage,
+      author: {
+        id: userId,
+        name: email ? email.split("@")[0] : "Seller",
+        email: email || "",
+      },
+      category,
+      tags,
+      status: submit ? "pending_review" : "draft",
+      featured: false,
+      seo: { title: seo.title || title, description: seo.description || excerpt },
+      publishedAt: undefined,
+      views: 0,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const result = await db.collection("blog_posts").insertOne(post);
+    res.json({ success: true, data: { _id: result.insertedId.toString() } });
+  } catch (error) {
+    console.error("Error creating seller blog post:", error);
+    res.status(500).json({ success: false, error: "Failed to create post" });
+  }
+};
+
+// Seller: update own post (only draft/pending_review)
+export const updateSellerBlogPost: RequestHandler = async (req, res) => {
+  try {
+    const db = getDatabase();
+    // @ts-ignore
+    const userId = (req as any).userId as string;
+    const { postId } = req.params;
+    const existing = await db
+      .collection("blog_posts")
+      .findOne({ _id: new ObjectId(postId), "author.id": userId });
+
+    if (!existing) {
+      return res.status(404).json({ success: false, error: "Post not found" });
+    }
+    if (existing.status === "published") {
+      return res.status(400).json({ success: false, error: "Cannot edit published post" });
+    }
+
+    const update: any = { ...req.body, updatedAt: new Date() };
+    delete update._id;
+    delete update.status; // seller cannot set final status
+
+    await db
+      .collection("blog_posts")
+      .updateOne({ _id: new ObjectId(postId) }, { $set: update });
+
+    res.json({ success: true, data: { message: "Updated" } });
+  } catch (error) {
+    console.error("Error updating seller blog post:", error);
+    res.status(500).json({ success: false, error: "Failed to update post" });
+  }
+};
+
+// Seller: delete own post (only draft/pending_review)
+export const deleteSellerBlogPost: RequestHandler = async (req, res) => {
+  try {
+    const db = getDatabase();
+    // @ts-ignore
+    const userId = (req as any).userId as string;
+    const { postId } = req.params;
+
+    const existing = await db
+      .collection("blog_posts")
+      .findOne({ _id: new ObjectId(postId), "author.id": userId });
+    if (!existing) {
+      return res.status(404).json({ success: false, error: "Post not found" });
+    }
+    if (existing.status === "published") {
+      return res.status(400).json({ success: false, error: "Cannot delete published post" });
+    }
+
+    await db.collection("blog_posts").deleteOne({ _id: new ObjectId(postId) });
+    res.json({ success: true, data: { message: "Deleted" } });
+  } catch (error) {
+    console.error("Error deleting seller blog post:", error);
+    res.status(500).json({ success: false, error: "Failed to delete post" });
   }
 };
 

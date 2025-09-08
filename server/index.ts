@@ -1446,6 +1446,12 @@ export function createServer() {
   // Blog routes
   app.get("/api/blog", getPublicBlogPosts);
   app.get("/api/blog/:slug", getBlogPostBySlug);
+  // Seller blog
+  app.get("/api/seller/blog", authenticateToken, requireSellerOrAgent, getSellerBlogPosts);
+  app.post("/api/seller/blog", authenticateToken, requireSellerOrAgent, createSellerBlogPost);
+  app.put("/api/seller/blog/:postId", authenticateToken, requireSellerOrAgent, updateSellerBlogPost);
+  app.delete("/api/seller/blog/:postId", authenticateToken, requireSellerOrAgent, deleteSellerBlogPost);
+  // Admin blog
   app.get("/api/admin/blog", authenticateToken, requireAdmin, getAllBlogPosts);
   app.post("/api/admin/blog", authenticateToken, requireAdmin, createBlogPost);
   app.put(

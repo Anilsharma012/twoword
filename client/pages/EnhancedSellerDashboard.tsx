@@ -529,7 +529,7 @@ export default function EnhancedSellerDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="notifications" className="relative">
               Notifications
@@ -551,6 +551,7 @@ export default function EnhancedSellerDashboard() {
             <TabsTrigger value="insights">Insights</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="blog">Blog</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -1003,6 +1004,25 @@ export default function EnhancedSellerDashboard() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Blog Tab */}
+          <TabsContent value="blog" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Blog</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-3">
+                  <Link to="/seller/blog">
+                    <Button className="bg-[#C70000] hover:bg-[#A60000] text-white">Create Blog Post</Button>
+                  </Link>
+                  <Link to="/seller/blog">
+                    <Button variant="outline">My Posts</Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Payments Tab */}

@@ -66,6 +66,7 @@ import NewProjects from "./pages/NewProjects";
 import RecentViews from "./pages/RecentViews";
 import Leads from "./pages/Leads";
 import Notifications from "./pages/Notifications";
+import SellerBlog from "./pages/SellerBlog";
 import NotFound from "./pages/NotFound";
 import FooterTest from "./pages/FooterTest";
 import FooterDebugPage from "./pages/FooterDebugPage";
@@ -173,6 +174,7 @@ function App() {
                   />
                   <Route path="/buyer-dashboard" element={<BuyerDashboard />} />
                   <Route path="/agent-dashboard" element={<AgentDashboard />} />
+                  <Route path="/seller/blog" element={<SellerBlog />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/admin/support" element={<Admin />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
