@@ -336,10 +336,17 @@ export const apiRequest = async (
       return apiRequest(endpoint, options, retryCount + 1);
     }
 
+    // Helper: safe-list endpoints that can return empty data on network issues
+    const isSafeListEndpoint = /(^|\b)(properties|ads|plans|banners)(\b|\/)/.test(endpoint);
+
     if (error && error.name === "AbortError") {
+      if (isSafeListEndpoint) {
+        const empty = { success: true, data: [] };
+        return { data: empty, status: 200, ok: true } as any;
+      }
       throw new Error(`Request timeout after ${finalTimeout}ms`);
     }
-    if (msg.includes("failed to fetch")) {
+    if (msg.includes("failed to fetch") || msg.includes("network")) {
       // For lightweight counters, return zero instead of throwing to avoid noisy errors
       const isUnread = /unread-count/.test(endpoint);
       if (isUnread) {
@@ -347,6 +354,10 @@ export const apiRequest = async (
           ? { success: true, data: { unread: 0 } }
           : { success: true, data: { totalUnread: 0 } };
         return { data: zero, status: 200, ok: true } as any;
+      }
+      if (isSafeListEndpoint) {
+        const empty = { success: true, data: [] };
+        return { data: empty, status: 200, ok: true } as any;
       }
       throw new Error(`Network error: Unable to connect to server at ${url}`);
     }
