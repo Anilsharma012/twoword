@@ -627,7 +627,12 @@ export default function EnhancedSellerDashboard() {
                   <div className="space-y-4">
                     {properties.slice(0, 3).map((property, idx) => (
                       <div
-                        key={(property as any)._id || (property as any).id || property.title || idx}
+                        key={
+                          (property as any)._id ||
+                          (property as any).id ||
+                          property.title ||
+                          idx
+                        }
                         className="border border-gray-200 rounded-lg p-4"
                       >
                         <div className="flex items-start justify-between">
@@ -695,7 +700,9 @@ export default function EnhancedSellerDashboard() {
                   <div className="space-y-3">
                     {notifications.map((notification, idx) => (
                       <div
-                        key={(notification as any)._id || notification.title || idx}
+                        key={
+                          (notification as any)._id || notification.title || idx
+                        }
                         className={`border rounded-lg p-4 ${
                           notification.isRead
                             ? "bg-gray-50"
@@ -794,7 +801,14 @@ export default function EnhancedSellerDashboard() {
                     </TableHeader>
                     <TableBody>
                       {properties.map((property, idx) => (
-                        <TableRow key={(property as any)._id || (property as any).id || property.title || idx}>
+                        <TableRow
+                          key={
+                            (property as any)._id ||
+                            (property as any).id ||
+                            property.title ||
+                            idx
+                          }
+                        >
                           <TableCell>
                             <div>
                               <div className="font-medium">
@@ -1015,7 +1029,9 @@ export default function EnhancedSellerDashboard() {
               <CardContent>
                 <div className="flex flex-wrap gap-3">
                   <Link to="/seller/blog">
-                    <Button className="bg-[#C70000] hover:bg-[#A60000] text-white">Create Blog Post</Button>
+                    <Button className="bg-[#C70000] hover:bg-[#A60000] text-white">
+                      Create Blog Post
+                    </Button>
                   </Link>
                   <Link to="/seller/blog">
                     <Button variant="outline">My Posts</Button>
@@ -1039,7 +1055,10 @@ export default function EnhancedSellerDashboard() {
                 <CardContent>
                   <div className="space-y-4">
                     {packages.map((pkg, idx) => (
-                      <div key={(pkg as any)._id || pkg.name || idx} className="border rounded-lg p-4">
+                      <div
+                        key={(pkg as any)._id || pkg.name || idx}
+                        className="border rounded-lg p-4"
+                      >
                         <div className="flex items-center justify-between mb-3">
                           <h3 className="font-bold text-lg">{pkg.name}</h3>
                           <Badge
@@ -1098,7 +1117,9 @@ export default function EnhancedSellerDashboard() {
                     <div className="space-y-3">
                       {payments.map((payment, idx) => (
                         <div
-                          key={(payment as any)._id || payment.transactionId || idx}
+                          key={
+                            (payment as any)._id || payment.transactionId || idx
+                          }
                           className="border rounded-lg p-3"
                         >
                           <div className="flex items-center justify-between">

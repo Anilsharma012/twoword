@@ -41,14 +41,14 @@ interface AdminSettings {
       saltIndex: string;
       testMode: boolean;
     };
-  adsense?: {
-    enabled: boolean;
-    clientId: string;
-    slots: Record<string, string>;
-    disabledRoutes: string[];
-    testMode: boolean;
+    adsense?: {
+      enabled: boolean;
+      clientId: string;
+      slots: Record<string, string>;
+      disabledRoutes: string[];
+      testMode: boolean;
+    };
   };
-};
 }
 
 // Get admin settings
@@ -103,7 +103,13 @@ export const getAdminSettings: RequestHandler = async (req, res) => {
         adsense: {
           enabled: false,
           clientId: "",
-          slots: { below_categories: "", header: "", footer: "", sidebar: "", inline: "" },
+          slots: {
+            below_categories: "",
+            header: "",
+            footer: "",
+            sidebar: "",
+            inline: "",
+          },
           disabledRoutes: [],
           testMode: true,
         },

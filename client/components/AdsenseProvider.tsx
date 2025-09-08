@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 type AdsenseConfig = {
   enabled: boolean;
@@ -14,7 +20,11 @@ export function useAdsenseConfig() {
   return useContext(AdsContext);
 }
 
-export default function AdsenseProvider({ children }: { children?: React.ReactNode }) {
+export default function AdsenseProvider({
+  children,
+}: {
+  children?: React.ReactNode;
+}) {
   const [config, setConfig] = useState<AdsenseConfig | null>(null);
 
   useEffect(() => {
@@ -60,5 +70,7 @@ export default function AdsenseProvider({ children }: { children?: React.ReactNo
 
   const value = useMemo(() => config, [config]);
 
-  return <AdsContext.Provider value={value}>{children || null}</AdsContext.Provider>;
+  return (
+    <AdsContext.Provider value={value}>{children || null}</AdsContext.Provider>
+  );
 }

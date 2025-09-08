@@ -332,7 +332,10 @@ export const getSellerBlogPosts: RequestHandler = async (req, res) => {
       .sort({ createdAt: -1 })
       .toArray();
 
-    const response: ApiResponse<BlogPost[]> = { success: true, data: posts as BlogPost[] };
+    const response: ApiResponse<BlogPost[]> = {
+      success: true,
+      data: posts as BlogPost[],
+    };
     res.json(response);
   } catch (error) {
     console.error("Error fetching seller blog posts:", error);
@@ -370,12 +373,17 @@ export const createSellerBlogPost: RequestHandler = async (req, res) => {
         .replace(/\s+/g, "-")
         .replace(/-+/g, "-");
 
-    const slug = incomingSlug && incomingSlug.trim() ? makeSlug(incomingSlug) : makeSlug(title);
+    const slug =
+      incomingSlug && incomingSlug.trim()
+        ? makeSlug(incomingSlug)
+        : makeSlug(title);
 
     // Ensure unique slug
     const existing = await db.collection("blog_posts").findOne({ slug });
     if (existing) {
-      return res.status(400).json({ success: false, error: "Slug already exists" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Slug already exists" });
     }
 
     const now = new Date();
@@ -394,7 +402,10 @@ export const createSellerBlogPost: RequestHandler = async (req, res) => {
       tags,
       status: submit ? "pending_review" : "draft",
       featured: false,
-      seo: { title: seo.title || title, description: seo.description || excerpt },
+      seo: {
+        title: seo.title || title,
+        description: seo.description || excerpt,
+      },
       publishedAt: undefined,
       views: 0,
       createdAt: now,
@@ -424,7 +435,9 @@ export const updateSellerBlogPost: RequestHandler = async (req, res) => {
       return res.status(404).json({ success: false, error: "Post not found" });
     }
     if (existing.status === "published") {
-      return res.status(400).json({ success: false, error: "Cannot edit published post" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Cannot edit published post" });
     }
 
     const update: any = { ...req.body, updatedAt: new Date() };
@@ -457,7 +470,9 @@ export const deleteSellerBlogPost: RequestHandler = async (req, res) => {
       return res.status(404).json({ success: false, error: "Post not found" });
     }
     if (existing.status === "published") {
-      return res.status(400).json({ success: false, error: "Cannot delete published post" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Cannot delete published post" });
     }
 
     await db.collection("blog_posts").deleteOne({ _id: new ObjectId(postId) });

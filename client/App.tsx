@@ -178,8 +178,14 @@ function App() {
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/admin/support" element={<Admin />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
-                  <Route path="/admin/ads/categories" element={<CategoriesPage />} />
-                  <Route path="/admin/locations/countries" element={<CountriesPage />} />
+                  <Route
+                    path="/admin/ads/categories"
+                    element={<CategoriesPage />}
+                  />
+                  <Route
+                    path="/admin/locations/countries"
+                    element={<CountriesPage />}
+                  />
                   <Route path="/staff/login" element={<StaffLogin />} />
                   <Route path="/staff-dashboard" element={<StaffDashboard />} />
                   <Route path="/staff-admin" element={<StaffAdmin />} />

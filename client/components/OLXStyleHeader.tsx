@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Search, Heart, Menu, Bell, User, LogOut, MapPin, Clock } from "lucide-react";
+import {
+  Search,
+  Heart,
+  Menu,
+  Bell,
+  User,
+  LogOut,
+  MapPin,
+  Clock,
+} from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { ROHTAK_AREAS } from "@shared/types";
 import MenuDashboard from "./MenuDashboard";
@@ -13,7 +22,11 @@ export default function OLXStyleHeader() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const [recent, setRecent] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem("recent_searches") || "[]"); } catch { return []; }
+    try {
+      return JSON.parse(localStorage.getItem("recent_searches") || "[]");
+    } catch {
+      return [];
+    }
   });
   const unread = useNotificationsUnread();
 
@@ -58,12 +71,9 @@ export default function OLXStyleHeader() {
   const filteredAreas = ROHTAK_AREAS.filter((area) =>
     area.toLowerCase().includes(debouncedQuery.toLowerCase()),
   );
-  const suggestions = (debouncedQuery
-    ? filteredAreas
-    : [
-        ...recent,
-        ...ROHTAK_AREAS.slice(0, 5),
-      ]).slice(0, 20);
+  const suggestions = (
+    debouncedQuery ? filteredAreas : [...recent, ...ROHTAK_AREAS.slice(0, 5)]
+  ).slice(0, 20);
 
   const handleLocationClick = () => {
     // Location selector logic here
@@ -114,12 +124,26 @@ export default function OLXStyleHeader() {
 
         {/* Search Bar */}
         <div className="mt-3 relative">
-          <form onSubmit={handleSearch} className="relative" onKeyDown={(e) => {
-            if (!showSuggestions || suggestions.length === 0) return;
-            if (e.key === "ArrowDown") { e.preventDefault(); setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1)); }
-            if (e.key === "ArrowUp") { e.preventDefault(); setActiveIndex((i) => Math.max(i - 1, 0)); }
-            if (e.key === "Enter" && activeIndex >= 0) { e.preventDefault(); pickSuggestion(suggestions[activeIndex]); setShowSuggestions(false); }
-          }}>
+          <form
+            onSubmit={handleSearch}
+            className="relative"
+            onKeyDown={(e) => {
+              if (!showSuggestions || suggestions.length === 0) return;
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
+              }
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setActiveIndex((i) => Math.max(i - 1, 0));
+              }
+              if (e.key === "Enter" && activeIndex >= 0) {
+                e.preventDefault();
+                pickSuggestion(suggestions[activeIndex]);
+                setShowSuggestions(false);
+              }
+            }}
+          >
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
@@ -150,11 +174,16 @@ export default function OLXStyleHeader() {
                 {!debouncedQuery && recent.length > 0 && (
                   <div className="p-2 border-b border-gray-100">
                     <div className="text-xs text-gray-500 mb-2 px-2 flex items-center space-x-1">
-                      <Clock className="h-3 w-3" /><span>Recent</span>
+                      <Clock className="h-3 w-3" />
+                      <span>Recent</span>
                     </div>
                     {recent.map((r) => (
-                      <button key={`recent-${r}`} type="button" onClick={() => pickSuggestion(r)}
-                        className="w-full text-left px-3 py-3 hover:bg-gray-50 rounded flex items-center space-x-2 min-h-11 whitespace-normal break-words">
+                      <button
+                        key={`recent-${r}`}
+                        type="button"
+                        onClick={() => pickSuggestion(r)}
+                        className="w-full text-left px-3 py-3 hover:bg-gray-50 rounded flex items-center space-x-2 min-h-11 whitespace-normal break-words"
+                      >
                         <MapPin className="h-4 w-4 text-[#C70000]" />
                         <span className="text-gray-900">{r}</span>
                       </button>
@@ -164,7 +193,9 @@ export default function OLXStyleHeader() {
 
                 <div className="p-2">
                   {!debouncedQuery && (
-                    <div className="text-xs text-gray-500 mb-2 px-2">Popular nearby</div>
+                    <div className="text-xs text-gray-500 mb-2 px-2">
+                      Popular nearby
+                    </div>
                   )}
                   {suggestions.map((area, idx) => (
                     <button
@@ -172,7 +203,7 @@ export default function OLXStyleHeader() {
                       type="button"
                       onMouseEnter={() => setActiveIndex(idx)}
                       onClick={() => pickSuggestion(area)}
-                      className={`w-full text-left px-3 py-3 rounded flex items-center space-x-2 min-h-11 whitespace-normal break-words ${activeIndex===idx?"bg-gray-100":"hover:bg-gray-50"}`}
+                      className={`w-full text-left px-3 py-3 rounded flex items-center space-x-2 min-h-11 whitespace-normal break-words ${activeIndex === idx ? "bg-gray-100" : "hover:bg-gray-50"}`}
                     >
                       <MapPin className="h-4 w-4 text-[#C70000]" />
                       <span className="text-gray-900">{area}</span>

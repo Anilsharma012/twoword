@@ -29,8 +29,12 @@ export default function AdSlot({
   const ref = useRef<HTMLDivElement>(null);
   const cfg = useAdsenseConfig();
 
-  const resolvedSlot = adSlot || (slotKey && cfg?.slots?.[slotKey]) || undefined;
-  const routeDisabled = cfg?.disabledRoutes?.includes(typeof window !== "undefined" ? window.location.pathname : "") ?? false;
+  const resolvedSlot =
+    adSlot || (slotKey && cfg?.slots?.[slotKey]) || undefined;
+  const routeDisabled =
+    cfg?.disabledRoutes?.includes(
+      typeof window !== "undefined" ? window.location.pathname : "",
+    ) ?? false;
   const enabled = !!cfg?.enabled && !!cfg?.clientId && !routeDisabled;
 
   useEffect(() => {

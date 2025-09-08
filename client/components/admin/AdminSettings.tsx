@@ -793,132 +793,154 @@ export default function AdminSettings() {
             </CardContent>
           </Card>
         </TabsContent>
-          <TabsContent value="adsense" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  Google AdSense
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-base font-medium">Enable AdSense</Label>
-                    <p className="text-sm text-gray-600">Toggle ads across the site</p>
-                  </div>
-                  <Switch
-                    checked={(settings as any).adsense?.enabled ?? false}
-                    onCheckedChange={(checked) =>
-                      setSettings((prev: any) => ({
-                        ...prev,
-                        adsense: { ...(prev.adsense || {}), enabled: checked },
-                      }))
-                    }
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Client ID</Label>
-                    <Input
-                      placeholder="ca-pub-xxxxxxxxxxxxxxxx"
-                      value={(settings as any).adsense?.clientId || ""}
-                      onChange={(e) =>
-                        setSettings((prev: any) => ({
-                          ...prev,
-                          adsense: { ...(prev.adsense || {}), clientId: e.target.value },
-                        }))
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label>Test Mode</Label>
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-600">Serve test ads</p>
-                      <Switch
-                        checked={(settings as any).adsense?.testMode ?? false}
-                        onCheckedChange={(checked) =>
-                          setSettings((prev: any) => ({
-                            ...prev,
-                            adsense: { ...(prev.adsense || {}), testMode: checked },
-                          }))
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    ["header", "Header"],
-                    ["below_categories", "Below Categories"],
-                    ["inline", "Inline"],
-                    ["sidebar", "Sidebar"],
-                    ["footer", "Footer"],
-                  ].map(([key, label]) => (
-                    <div key={key}>
-                      <Label>{label} Slot ID</Label>
-                      <Input
-                        placeholder="xxxxxxxxxx"
-                        value={((settings as any).adsense?.slots || {})[key as string] || ""}
-                        onChange={(e) =>
-                          setSettings((prev: any) => ({
-                            ...prev,
-                            adsense: {
-                              ...(prev.adsense || {}),
-                              slots: { ...((prev.adsense && prev.adsense.slots) || {}), [key as string]: e.target.value },
-                            },
-                          }))
-                        }
-                      />
-                    </div>
-                  ))}
-                </div>
-
+        <TabsContent value="adsense" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                Google AdSense
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
                 <div>
-                  <Label>Disable on Routes (comma separated)</Label>
+                  <Label className="text-base font-medium">
+                    Enable AdSense
+                  </Label>
+                  <p className="text-sm text-gray-600">
+                    Toggle ads across the site
+                  </p>
+                </div>
+                <Switch
+                  checked={(settings as any).adsense?.enabled ?? false}
+                  onCheckedChange={(checked) =>
+                    setSettings((prev: any) => ({
+                      ...prev,
+                      adsense: { ...(prev.adsense || {}), enabled: checked },
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Client ID</Label>
                   <Input
-                    placeholder="/post-property, /admin"
-                    value={((settings as any).adsense?.disabledRoutes || []).join(", ")}
+                    placeholder="ca-pub-xxxxxxxxxxxxxxxx"
+                    value={(settings as any).adsense?.clientId || ""}
                     onChange={(e) =>
                       setSettings((prev: any) => ({
                         ...prev,
                         adsense: {
                           ...(prev.adsense || {}),
-                          disabledRoutes: e.target.value
-                            .split(",")
-                            .map((s) => s.trim())
-                            .filter(Boolean),
+                          clientId: e.target.value,
                         },
                       }))
                     }
                   />
                 </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    onClick={async () => {
-                      if (!token) return;
-                      const res = await fetch("/api/admin/settings/adsense", {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                        body: JSON.stringify((settings as any).adsense || {}),
-                      });
-                      if (res.ok) {
-                        setSuccess("AdSense settings saved");
-                        setTimeout(() => setSuccess(""), 3000);
-                      } else {
-                        setError("Failed to save AdSense settings");
+                <div>
+                  <Label>Test Mode</Label>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-600">Serve test ads</p>
+                    <Switch
+                      checked={(settings as any).adsense?.testMode ?? false}
+                      onCheckedChange={(checked) =>
+                        setSettings((prev: any) => ({
+                          ...prev,
+                          adsense: {
+                            ...(prev.adsense || {}),
+                            testMode: checked,
+                          },
+                        }))
                       }
-                    }}
-                  >
-                    Save AdSense
-                  </Button>
+                    />
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  ["header", "Header"],
+                  ["below_categories", "Below Categories"],
+                  ["inline", "Inline"],
+                  ["sidebar", "Sidebar"],
+                  ["footer", "Footer"],
+                ].map(([key, label]) => (
+                  <div key={key}>
+                    <Label>{label} Slot ID</Label>
+                    <Input
+                      placeholder="xxxxxxxxxx"
+                      value={
+                        ((settings as any).adsense?.slots || {})[
+                          key as string
+                        ] || ""
+                      }
+                      onChange={(e) =>
+                        setSettings((prev: any) => ({
+                          ...prev,
+                          adsense: {
+                            ...(prev.adsense || {}),
+                            slots: {
+                              ...((prev.adsense && prev.adsense.slots) || {}),
+                              [key as string]: e.target.value,
+                            },
+                          },
+                        }))
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <Label>Disable on Routes (comma separated)</Label>
+                <Input
+                  placeholder="/post-property, /admin"
+                  value={((settings as any).adsense?.disabledRoutes || []).join(
+                    ", ",
+                  )}
+                  onChange={(e) =>
+                    setSettings((prev: any) => ({
+                      ...prev,
+                      adsense: {
+                        ...(prev.adsense || {}),
+                        disabledRoutes: e.target.value
+                          .split(",")
+                          .map((s) => s.trim())
+                          .filter(Boolean),
+                      },
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={async () => {
+                    if (!token) return;
+                    const res = await fetch("/api/admin/settings/adsense", {
+                      method: "PUT",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                      },
+                      body: JSON.stringify((settings as any).adsense || {}),
+                    });
+                    if (res.ok) {
+                      setSuccess("AdSense settings saved");
+                      setTimeout(() => setSuccess(""), 3000);
+                    } else {
+                      setError("Failed to save AdSense settings");
+                    }
+                  }}
+                >
+                  Save AdSense
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
