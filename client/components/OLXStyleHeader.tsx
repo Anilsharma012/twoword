@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Search, Heart, Menu, Bell, User, LogOut } from "lucide-react";
+import { Search, Heart, Menu, Bell, User, LogOut, MapPin } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { ROHTAK_AREAS } from "@shared/types";
 import MenuDashboard from "./MenuDashboard";
