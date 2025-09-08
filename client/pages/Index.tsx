@@ -11,7 +11,7 @@ import HomepageBanner from "../components/HomepageBanner";
 import StaticFooter from "../components/StaticFooter";
 import HeroImageSlider from "../components/HeroImageSlider";
 import PropertyAdsSlider from "../components/PropertyAdsSlider";
-import AdSlot from "../components/AdSlot";
+import AdSlot from "../ads/AdSlot";
 
 export default function Index() {
   return (
