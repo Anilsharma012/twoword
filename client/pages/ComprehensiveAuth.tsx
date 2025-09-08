@@ -641,7 +641,8 @@ const handleGoogleAuth = async (e?: React.MouseEvent) => {
   type="button"
   onClick={handleGoogleAuth}
   className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-  disabled={loading}
+  disabled={loading || !isFirebaseConfigured}
+  title={isFirebaseConfigured ? undefined : "Google sign-in not configured"}
 >
   {loading ? (
     <div className="flex items-center">
@@ -650,11 +651,13 @@ const handleGoogleAuth = async (e?: React.MouseEvent) => {
     </div>
   ) : (
     <div className="flex items-center">
-      {/* google icon svg ... */}
       Continue with Google
     </div>
   )}
 </Button>
+{!isFirebaseConfigured && (
+  <p className="text-xs text-gray-500 mt-2 text-center">Google sign-in is not available. Use Password or OTP.</p>
+) }
 
                   </div>
                 </div>
