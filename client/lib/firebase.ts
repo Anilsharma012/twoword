@@ -13,7 +13,7 @@ import {
   ConfirmationResult,
   AuthError,
 } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 
 // Firebase configuration via environment variables (no secrets committed)
 const firebaseConfig = {
@@ -51,6 +51,19 @@ export { analytics };
 // Initialize Firebase Auth/Firestore conditionally
 export const auth: any = isConfigured ? getAuth(app) : (null as any);
 export const db: any = isConfigured ? getFirestore(app) : (null as any);
+
+// Enable offline persistence (best-effort)
+if (isConfigured && typeof window !== "undefined" && db) {
+  enableIndexedDbPersistence(db).catch((err: any) => {
+    if (err?.code === "failed-precondition") {
+      console.warn("Firestore persistence disabled: multiple tabs open.");
+    } else if (err?.code === "unimplemented") {
+      console.warn("Firestore persistence not available in this browser.");
+    } else {
+      console.warn("Failed to enable Firestore persistence:", err?.message || err);
+    }
+  });
+}
 
 // Google Auth Provider
 export const googleProvider = new GoogleAuthProvider();
