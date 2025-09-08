@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Search, Heart, Menu, Bell, User, LogOut } from "lucide-react";
+import { Search, Heart, Menu, Bell, User, LogOut, MapPin } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { ROHTAK_AREAS } from "@shared/types";
 import MenuDashboard from "./MenuDashboard";
@@ -58,7 +58,7 @@ export default function OLXStyleHeader() {
           {/* Logo */}
           <div className="flex items-center space-x-2">
             <div className="text-2xl font-bold text-white">
-              ASHISH PROPERTIES
+              Aashish Properties
             </div>
           </div>
 
