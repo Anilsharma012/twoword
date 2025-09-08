@@ -952,6 +952,43 @@ export function createServer() {
     requireAdmin,
     updatePhonePeConfig,
   );
+
+  // AdSense config routes
+  app.get("/api/adsense/config", async (req, res) => {
+    try {
+      const db = getDatabase();
+      const settings = await db.collection("admin_settings").findOne({});
+      const adsense = (settings?.adsense ?? {
+        enabled: false,
+        clientId: "",
+        slots: {},
+        disabledRoutes: [],
+        testMode: true,
+      });
+      res.json({ success: true, data: adsense });
+    } catch (e) {
+      res.status(500).json({ success: false, error: "Failed to fetch AdSense config" });
+    }
+  });
+  app.put(
+    "/api/admin/settings/adsense",
+    authenticateToken,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const db = getDatabase();
+        const { enabled, clientId, slots = {}, disabledRoutes = [], testMode = false } = req.body || {};
+        await db.collection("admin_settings").updateOne(
+          {},
+          { $set: { adsense: { enabled: !!enabled, clientId: clientId || "", slots, disabledRoutes, testMode: !!testMode }, updatedAt: new Date() } },
+          { upsert: true },
+        );
+        res.json({ success: true, data: { message: "AdSense settings updated" } });
+      } catch (e) {
+        res.status(500).json({ success: false, error: "Failed to update AdSense config" });
+      }
+    },
+  );
   app.get(
     "/api/admin/user-stats",
     authenticateToken,
