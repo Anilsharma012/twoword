@@ -76,10 +76,11 @@ import OtherServicesListings from "./pages/OtherServicesListings";
 import TestChat from "./pages/TestChat";
 import Step3Test from "./pages/Step3Test";
 import NetworkStatus from "./components/NetworkStatus";
-import AdsenseProvider from "./components/AdsenseProvider";
 import SubcategoriesPage from "./pages/SubcategoriesPage";
 import CategoryContentPage from "./pages/CategoryContentPage";
 import OneSignalInit from "./components/OneSignalInit";
+import { AdsProvider } from "./ads/AdsProvider";
+import AdminAdsSettings from "./pages/AdminAdsSettings";
 import { AdsProvider } from "./ads/AdsProvider";
 
 const queryClient = new QueryClient();
@@ -94,10 +95,10 @@ function App() {
               <Toaster />
               <Sonner />
               <NetworkStatus />
-              {import.meta.env.VITE_ADSENSE_CLIENT ? <AdsenseProvider /> : null}
               {import.meta.env.VITE_ONESIGNAL_APP_ID ? <OneSignalInit /> : null}
               <LocationProvider>
               <BrowserRouter>
+                <AdsProvider>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/categories" element={<Categories />} />
@@ -182,6 +183,7 @@ function App() {
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/admin/support" element={<Admin />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/admin/ads-settings" element={<AdminAdsSettings />} />
                   <Route path="/admin/ads/categories" element={<CategoriesPage />} />
                   <Route path="/admin/ads/categories/:categoryId/subcategories" element={<SubcategoriesPage />} />
                   <Route path="/admin/ads/categories/:categoryId/content" element={<CategoryContentPage />} />
@@ -222,6 +224,7 @@ function App() {
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
+                </AdsProvider>
               </BrowserRouter>
               </LocationProvider>
 
