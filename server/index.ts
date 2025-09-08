@@ -758,6 +758,14 @@ export function createServer() {
     res.type("text/plain").send(`google.com, ${pub}, DIRECT, f08c47fec0942fa0`);
   });
 
+  // Ads settings routes
+  try {
+    const adsRoutes = (await import("./routes/ads")).default;
+    app.use("/api", adsRoutes);
+  } catch (e) {
+    console.warn("Ads routes failed to mount:", (e as any)?.message || e);
+  }
+
   // Admin property approval routes
   app.get(
     "/api/admin/properties/pending",
