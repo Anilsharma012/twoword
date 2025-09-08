@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Search, Heart, Menu, Bell, User, LogOut, MapPin, Clock } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { ROHTAK_AREAS } from "@shared/types";
 import MenuDashboard from "./MenuDashboard";
 import { useNotificationsUnread } from "../hooks/useNotificationsUnread";
-import { useEffect, useState } from "react";
 
 export default function OLXStyleHeader() {
   const { user, isAuthenticated, logout } = useAuth();
