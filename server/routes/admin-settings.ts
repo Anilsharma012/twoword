@@ -100,6 +100,13 @@ export const getAdminSettings: RequestHandler = async (req, res) => {
             testMode: true,
           },
         },
+        adsense: {
+          enabled: false,
+          clientId: "",
+          slots: { below_categories: "", header: "", footer: "", sidebar: "", inline: "" },
+          disabledRoutes: [],
+          testMode: true,
+        },
       };
 
       await db.collection("admin_settings").insertOne(defaultSettings);
