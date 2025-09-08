@@ -4,6 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 import { ROHTAK_AREAS } from "@shared/types";
 import MenuDashboard from "./MenuDashboard";
 import { useNotificationsUnread } from "../hooks/useNotificationsUnread";
+import { useEffect, useState } from "react";
 
 export default function OLXStyleHeader() {
   const { user, isAuthenticated, logout } = useAuth();
