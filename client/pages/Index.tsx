@@ -25,11 +25,9 @@ export default function Index() {
         <HeroImageSlider />
 
         {/* Ad Slot: Below hero (CLS-safe) */}
-        {import.meta.env.VITE_ADSENSE_CLIENT ? (
-          <div className="px-4 mt-4">
-            <AdSlot format="horizontal" />
-          </div>
-        ) : null}
+        <div className="px-4 mt-4">
+          <AdSlot place="belowHero" />
+        </div>
 
         {/* Property Ads Slider */}
         <PropertyAdsSlider />
