@@ -104,6 +104,9 @@ const ComprehensiveAuth = () => {
       if (!formData.password || formData.password.length < 6) {
         throw new Error("Password must be at least 6 characters.");
       }
+      if (!isLogin && !formData.name) {
+        throw new Error("Please enter your full name.");
+      }
 
       const endpoint = isLogin ? "auth/login" : "auth/register";
 
