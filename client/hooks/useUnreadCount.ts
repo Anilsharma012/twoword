@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { api } from "@/lib/api";
+import { api, API_CONFIG } from "@/lib/api";
 
 export const useUnreadCount = () => {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -13,7 +13,15 @@ export const useUnreadCount = () => {
           localStorage.getItem("token") || localStorage.getItem("auth_token");
         if (!token) return;
 
-        // Use centralized API helper which handles timeouts, retries and fallbacks
+        // In Builder preview without a configured backend, skip network calls
+        const isBuilder =
+          typeof window !== "undefined" &&
+          window.location.hostname.includes("projects.builder.codes");
+        if (isBuilder && !API_CONFIG.baseUrl) {
+          if (mounted) setUnreadCount(0);
+          return;
+        }
+
         const res = await api.get("chat/unread-count", token);
         if (!mounted) return;
 
@@ -23,13 +31,16 @@ export const useUnreadCount = () => {
           setUnreadCount(0);
         }
       } catch (error: any) {
-        // Gracefully handle common transient issues by treating as zero unread
         const msg = String(error?.message || "").toLowerCase();
-        if (msg.includes("http 404") || msg.includes("failed to fetch") || msg.includes("timeout") || msg.includes("network")) {
+        if (
+          msg.includes("http 404") ||
+          msg.includes("failed to fetch") ||
+          msg.includes("timeout") ||
+          msg.includes("network")
+        ) {
           if (mounted) setUnreadCount(0);
           return;
         }
-        // Log concise error for unexpected cases
         console.error("Error fetching unread count:", error?.message || error);
       }
     };
