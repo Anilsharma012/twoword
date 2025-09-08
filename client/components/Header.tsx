@@ -14,6 +14,9 @@ import {
   getRohtakColonies,
   getRohtakLandmarks,
 } from "../data/rohtakLocations";
+import { useLocationPreference } from "../hooks/useLocationPreference";
+import LocationModal from "./LocationModal";
+import { useFirebaseAuth } from "../hooks/useFirebaseAuth";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
