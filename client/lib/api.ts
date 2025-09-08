@@ -340,6 +340,14 @@ export const apiRequest = async (
       throw new Error(`Request timeout after ${finalTimeout}ms`);
     }
     if (msg.includes("failed to fetch")) {
+      // For lightweight counters, return zero instead of throwing to avoid noisy errors
+      const isUnread = /unread-count/.test(endpoint);
+      if (isUnread) {
+        const zero = endpoint.includes("notifications")
+          ? { success: true, data: { unread: 0 } }
+          : { success: true, data: { totalUnread: 0 } };
+        return { data: zero, status: 200, ok: true } as any;
+      }
       throw new Error(`Network error: Unable to connect to server at ${url}`);
     }
     // If the abort was triggered with a reason, provide that reason
