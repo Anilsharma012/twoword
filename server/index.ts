@@ -286,6 +286,10 @@ import {
   createBlogPost,
   updateBlogPost,
   deleteBlogPost,
+  getSellerBlogPosts,
+  createSellerBlogPost,
+  updateSellerBlogPost,
+  deleteSellerBlogPost,
 } from "./routes/blog";
 
 // Reports routes
