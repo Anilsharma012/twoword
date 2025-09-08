@@ -13,7 +13,7 @@ interface Category {
   slug: string;
   icon: string;
   description: string;
-  subcategories: Subcategory[];
+  subcategories?: Subcategory[];
   order: number;
   active: boolean;
 }
@@ -55,7 +55,24 @@ export default function Categories() {
       const data = await response.json();
 
       if (data.success) {
-        setCategories(data.data);
+        const normalized = (Array.isArray(data.data) ? data.data : []).map((cat: any) => ({
+          ...cat,
+          subcategories: Array.isArray(cat.subcategories)
+            ? cat.subcategories.map((sc: any) => ({
+                ...sc,
+                id: sc?.id || sc?._id || sc?.slug || sc?.name || String(Math.random()),
+                slug: sc?.slug || sc?.name || sc?.id || sc?._id || "",
+                description: sc?.description || "",
+              }))
+            : [],
+          icon: cat.icon || "🏷️",
+          name: cat.name || cat.slug || "Category",
+          slug: cat.slug || cat.name || (cat._id ? String(cat._id) : ""),
+          description: cat.description || "",
+          order: typeof cat.order === "number" ? cat.order : 0,
+          active: typeof cat.active === "boolean" ? cat.active : true,
+        }));
+        setCategories(normalized);
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -216,7 +233,7 @@ export default function Categories() {
 
           {/* Subcategories List */}
           <div className="space-y-2">
-            {selectedCategory.subcategories.map((subcategory) => (
+            {(selectedCategory.subcategories ?? []).map((subcategory) => (
               <button
                 key={subcategory.id}
                 onClick={() => handleSubcategoryClick(subcategory)}
@@ -286,7 +303,7 @@ export default function Categories() {
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                  {category.subcategories.length} types
+                  {(category.subcategories?.length ?? 0)} types
                 </span>
                 <ChevronRight className="h-5 w-5 text-gray-400" />
               </div>
