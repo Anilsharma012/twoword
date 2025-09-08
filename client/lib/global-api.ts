@@ -1,5 +1,5 @@
 // Import the existing API URL creation logic
-import { createApiUrl } from "./api";
+import { createApiUrl, API_CONFIG } from "./api";
 import { safeReadResponse } from "./response-utils";
 
 // Make API helper available globally
@@ -16,6 +16,23 @@ function api(p: string, o: any = {}) {
     hasToken: !!t,
     hasBody: !!o.body,
   });
+
+  const method = (o.method || "GET").toUpperCase();
+
+  // Short-circuit read-only calls in Builder preview when no backend is configured
+  try {
+    const isBuilder =
+      typeof window !== "undefined" &&
+      window.location.hostname.includes("projects.builder.codes");
+    const noBackend = !API_CONFIG.baseUrl;
+    const isRead = method === "GET";
+    const endpoint = (p || "").replace(/^\/?api\//, "");
+    const isSafeList = /^(properties|plans|banners|ads)(\b|\/)/.test(endpoint);
+    if (isBuilder && noBackend && isRead && isSafeList) {
+      const empty = { success: true, data: [] };
+      return Promise.resolve({ ok: true, status: 200, success: true, data: empty, json: empty } as any);
+    }
+  } catch {}
 
   // Handle body - if it's already a string, use it as-is, otherwise stringify
   let bodyContent;
@@ -37,7 +54,6 @@ function api(p: string, o: any = {}) {
     console.warn(`⏰ API request timeout after ${timeoutMs}ms:`, url);
   }, timeoutMs);
 
-  const method = (o.method || "GET").toUpperCase();
   const baseHeaders: Record<string, string> = {
     ...(o.headers || {}),
     ...(t ? { Authorization: `Bearer ${t}` } : {}),
