@@ -606,9 +606,33 @@ export const googleAuth: RequestHandler = async (req, res) => {
       });
     } catch {}
 
-    const admin = getAdmin();
-    const decoded = await admin.auth().verifyIdToken(idToken);
-    console.log("verifyIdToken OK for:", decoded.email, "uid:", decoded.uid);
+    // Try firebase-admin verification first; if unavailable, fall back to Google tokeninfo
+    let decoded: any;
+    try {
+      const admin = getAdmin();
+      decoded = await admin.auth().verifyIdToken(idToken);
+      console.log("verifyIdToken OK for:", decoded.email, "uid:", decoded.uid);
+    } catch (e) {
+      console.warn("firebase-admin unavailable, falling back to tokeninfo verification");
+      const resp = await fetch(
+        `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`,
+      );
+      if (!resp.ok) {
+        const txt = await resp.text();
+        throw new Error(`tokeninfo failed: HTTP ${resp.status} ${txt}`);
+      }
+      const info = (await resp.json()) as any;
+      const projectId = process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID;
+      if (!projectId) throw new Error("FIREBASE_PROJECT_ID missing");
+      const issOk = info.iss === `https://securetoken.google.com/${projectId}`;
+      const audOk = info.aud === projectId;
+      const expOk = Number(info.exp || 0) * 1000 > Date.now();
+      if (!issOk || !audOk || !expOk) {
+        throw new Error("Invalid ID token claims");
+      }
+      decoded = { email: info.email, name: info.name || "", uid: info.sub };
+      console.log("tokeninfo verification OK for:", decoded.email, "uid:", decoded.uid);
+    }
 
     const email = decoded.email!;
     const name = decoded.name || "";
