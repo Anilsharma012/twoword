@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { MapPin, Menu, Search, Heart, Bell, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
