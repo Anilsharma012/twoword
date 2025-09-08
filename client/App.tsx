@@ -94,6 +94,7 @@ function App() {
               <Sonner />
               <NetworkStatus />
               {import.meta.env.VITE_ADSENSE_CLIENT ? <AdsenseProvider /> : null}
+              {import.meta.env.VITE_ONESIGNAL_APP_ID ? <OneSignalInit /> : null}
               <LocationProvider>
               <BrowserRouter>
                 <Routes>
