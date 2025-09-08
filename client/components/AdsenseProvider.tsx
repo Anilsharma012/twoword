@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 type AdsenseConfig = {
