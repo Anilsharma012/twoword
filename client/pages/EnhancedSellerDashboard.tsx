@@ -1043,7 +1043,7 @@ export default function EnhancedSellerDashboard() {
                         <div className="space-y-1 mb-4">
                           {pkg.features.map((feature, index) => (
                             <div
-                              key={index}
+                              key={`${pkg._id}-${feature}-${index}`}
                               className="flex items-center space-x-2"
                             >
                               <CheckCircle className="h-3 w-3 text-green-500" />
