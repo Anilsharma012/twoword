@@ -91,6 +91,7 @@ function App() {
               <NetworkStatus />
               {import.meta.env.VITE_ADSENSE_CLIENT ? <AdsenseProvider /> : null}
               <BrowserRouter>
+                <TitleSync />
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/categories" element={<Categories />} />
