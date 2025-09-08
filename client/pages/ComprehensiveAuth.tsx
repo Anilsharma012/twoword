@@ -248,15 +248,18 @@ const handleGoogleAuth = async (e?: React.MouseEvent) => {
   e?.preventDefault();
   if (loading) return;
 
+  if (!isFirebaseConfigured) {
+    setError("Google sign-in is unavailable. Please use Password or OTP.");
+    setAuthMode("password");
+    return;
+  }
+
   setLoading(true);
   setError("");
   setSuccess("");
 
   try {
-    // 1) Chrome account chooser popup -> Firebase ID token
     const { idToken } = await signInWithGoogle();
-
-    // 2) Ab demo payload NHI, sirf idToken (plus userType) backend ko
     const { data } = await api.post("auth/google", {
       idToken,
       userType: formData.userType || "buyer",
@@ -266,7 +269,6 @@ const handleGoogleAuth = async (e?: React.MouseEvent) => {
       throw new Error(data?.error || "Google authentication failed");
     }
 
-    // 3) JWT + user context -> redirect
     const { token, user } = data.data;
     login(token, user);
     redirectToCorrectDashboard(user.userType);
