@@ -91,7 +91,7 @@ function App() {
               <Toaster />
               <Sonner />
               <NetworkStatus />
-              {import.meta.env.VITE_ADSENSE_CLIENT ? <AdsenseProvider /> : null}
+              <AdsenseProvider />
               <BrowserRouter>
                 <TitleSync />
                 <Routes>
