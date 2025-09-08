@@ -41,7 +41,14 @@ interface AdminSettings {
       saltIndex: string;
       testMode: boolean;
     };
+  adsense?: {
+    enabled: boolean;
+    clientId: string;
+    slots: Record<string, string>;
+    disabledRoutes: string[];
+    testMode: boolean;
   };
+};
 }
 
 // Get admin settings
