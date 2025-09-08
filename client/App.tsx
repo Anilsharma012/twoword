@@ -81,7 +81,6 @@ import CategoryContentPage from "./pages/CategoryContentPage";
 import OneSignalInit from "./components/OneSignalInit";
 import { AdsProvider } from "./ads/AdsProvider";
 import AdminAdsSettings from "./pages/AdminAdsSettings";
-import { AdsProvider } from "./ads/AdsProvider";
 
 const queryClient = new QueryClient();
 
