@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { signInWithGoogle } from "../lib/firebase";
+import { signInWithGoogle, isFirebaseConfigured } from "../lib/firebase";
 
 import { useAuth } from "../hooks/useAuth";
 import { api } from "../lib/api";
@@ -217,32 +217,28 @@ const EnhancedUserLogin = () => {
   };
 
   // Google Login
- // Google Login
+// Google Login
 const handleGoogleLogin = async () => {
+  if (!isFirebaseConfigured) {
+    setError("Google login is unavailable. Firebase is not configured.");
+    return;
+  }
   setLoading(true);
   setError("");
   try {
-    // Real Firebase popup (account chooser shows)
-    const fbUser = await signInWithGoogle();
-    const displayName = fbUser.displayName || "";
-    const [given_name = "", family_name = ""] = displayName.split(" ");
+    const { idToken } = await signInWithGoogle();
 
     const { data } = await api.post("auth/google", {
-      googleUser: {
-        name: displayName,
-        given_name,
-        family_name,
-        email: fbUser.email,
-      },
+      idToken,
       userType: formData.userType || "buyer",
     });
 
-    if (data.success) {
+    if (data?.success) {
       const { token, user } = data.data;
       login(token, user);
       redirectToCorrectDashboard(user.userType);
     } else {
-      setError(data.error || "Google login failed");
+      throw new Error(data?.error || "Google login failed");
     }
   } catch (err: any) {
     setError(err.message || "Google login failed");
@@ -251,6 +247,18 @@ const handleGoogleLogin = async () => {
   }
 };
 
+
+  const redirectToCorrectDashboard = (userType: string) => {
+    const routes = {
+      admin: "/admin",
+      seller: "/seller-dashboard",
+      buyer: "/buyer-dashboard",
+      agent: "/agent-dashboard",
+    };
+
+    const targetRoute = routes[userType as keyof typeof routes] || "/";
+    navigate(targetRoute);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -298,7 +306,7 @@ const handleGoogleLogin = async () => {
                     <MessageSquare className="h-4 w-4 mr-1" />
                     OTP
                   </TabsTrigger>
-                  <TabsTrigger value="google" className="text-xs">
+                  <TabsTrigger value="google" className="text-xs" disabled={!isFirebaseConfigured}>
                     <Mail className="h-4 w-4 mr-1" />
                     Gmail
                   </TabsTrigger>
@@ -538,14 +546,14 @@ const handleGoogleLogin = async () => {
                       </div>
                       <h3 className="text-lg font-semibold mb-2">Quick Login with Gmail</h3>
                       <p className="text-gray-600 text-sm">
-                        Sign in instantly with your Google account
+                        {isFirebaseConfigured ? "Sign in instantly with your Google account" : "Google login is disabled because Firebase is not configured."}
                       </p>
                     </div>
 
-                    <Button 
+                    <Button
                       onClick={handleGoogleLogin}
                       className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                      disabled={loading}
+                      disabled={loading || !isFirebaseConfigured}
                     >
                       {loading ? (
                         <div className="flex items-center">
