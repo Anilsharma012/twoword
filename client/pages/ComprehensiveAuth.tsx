@@ -409,7 +409,16 @@ const handleGoogleAuth = async (e?: React.MouseEvent) => {
                 </Button>
                 <Button
                   variant={authMode === "google" ? "default" : "outline"}
-                  onClick={() => setAuthMode("google")}
+                  onClick={() => {
+                    if (isFirebaseConfigured) {
+                      setAuthMode("google");
+                    } else {
+                      setError("Google sign-in is unavailable. Please use Password or OTP.");
+                      setAuthMode("password");
+                    }
+                  }}
+                  disabled={!isFirebaseConfigured}
+                  title={isFirebaseConfigured ? undefined : "Google sign-in not configured"}
                   className={authMode === "google" ? "bg-[#C70000]" : ""}
                   size="sm"
                 >
