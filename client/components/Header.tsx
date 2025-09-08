@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MapPin, Menu, Search, Heart, Bell, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
@@ -37,9 +38,9 @@ export default function Header() {
 
   const { currentCity, openModal } = useLocationPreference();
   const { isAuthenticated } = useFirebaseAuth();
-  const openedOnceRef = React.useRef(false);
+  const openedOnceRef = useRef(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isAuthenticated && !currentCity && !openedOnceRef.current) {
       openedOnceRef.current = true;
       try { setTimeout(() => openModal(), 0); } catch {}
