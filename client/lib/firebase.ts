@@ -33,6 +33,7 @@ const isConfigured = Boolean(
     firebaseConfig.projectId &&
     firebaseConfig.appId,
 );
+export const isFirebaseConfigured = isConfigured;
 let app: any = null;
 let analytics: any = undefined;
 if (isConfigured) {
