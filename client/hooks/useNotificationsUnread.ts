@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, API_CONFIG } from "@/lib/api";
 
 export const useNotificationsUnread = () => {
   const [count, setCount] = useState(0);
@@ -12,7 +12,14 @@ export const useNotificationsUnread = () => {
           localStorage.getItem("token") || localStorage.getItem("auth_token");
         if (!token) return;
 
-        // Use centralized API with retries/XHR fallback
+        const isBuilder =
+          typeof window !== "undefined" &&
+          window.location.hostname.includes("projects.builder.codes");
+        if (isBuilder && !API_CONFIG.baseUrl) {
+          if (active) setCount(0);
+          return;
+        }
+
         const res = await api.get("notifications/unread-count", token);
         const data = res?.data;
         if (active) setCount(Number(data?.data?.unread || 0));
@@ -27,7 +34,6 @@ export const useNotificationsUnread = () => {
           if (active) setCount(0);
           return;
         }
-        // Non-transient unexpected errors can be logged
         console.warn("Unread notifications fetch error:", e?.message || e);
       }
     };
