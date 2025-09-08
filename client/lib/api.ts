@@ -97,25 +97,43 @@ export const createApiUrl = (endpoint: string): string => {
       typeof window !== "undefined" ? window.location.href : "server",
   });
 
-  // If we have a base URL, use it
-  if (API_CONFIG.baseUrl) {
-    // Handle case where baseUrl already contains '/api'
-    if (API_CONFIG.baseUrl.endsWith("/api")) {
-      const fullUrl = `${API_CONFIG.baseUrl}/${cleanEndpoint}`;
-      console.log("🌐 Full API URL (baseUrl has /api):", fullUrl);
-      return fullUrl;
-    } else {
-      const fullUrl = `${API_CONFIG.baseUrl}/api/${cleanEndpoint}`;
-      console.log("🌐 Full API URL:", fullUrl);
-      return fullUrl;
-    }
+  // Build base path first (without query)
+  const basePath = API_CONFIG.baseUrl
+    ? API_CONFIG.baseUrl.endsWith("/api")
+      ? `${API_CONFIG.baseUrl}/${cleanEndpoint}`
+      : `${API_CONFIG.baseUrl}/api/${cleanEndpoint}`
+    : `/api/${cleanEndpoint}`;
+
+  // Auto-append location query for property/ads endpoints
+  let urlObj: URL;
+  try {
+    urlObj = new URL(basePath, typeof window !== "undefined" ? window.location.origin : "http://localhost");
+  } catch {
+    return basePath; // fallback
   }
 
-  // For development or same-domain, use relative URLs
-  const relativeUrl = `/api/${cleanEndpoint}`;
-  console.log("🏠 Relative API URL:", relativeUrl);
-  console.log("🌍 Environment:", environment);
-  return relativeUrl;
+  try {
+    const shouldAttach = /^properties(\b|\/)|^ads(\b|\/)/.test(cleanEndpoint);
+    if (shouldAttach && typeof window !== "undefined") {
+      const saved = localStorage.getItem("app_city");
+      if (saved) {
+        const loc = JSON.parse(saved || "null");
+        if (loc) {
+          if (loc.coords && typeof loc.coords.lat === "number" && typeof loc.coords.lng === "number") {
+            if (!urlObj.searchParams.has("lat")) urlObj.searchParams.set("lat", String(loc.coords.lat));
+            if (!urlObj.searchParams.has("lng")) urlObj.searchParams.set("lng", String(loc.coords.lng));
+            if (!urlObj.searchParams.has("radiusKm")) urlObj.searchParams.set("radiusKm", "10");
+          } else if (loc.cityId && !urlObj.searchParams.has("cityId")) {
+            urlObj.searchParams.set("cityId", String(loc.cityId));
+          }
+        }
+      }
+    }
+  } catch {}
+
+  const fullUrl = urlObj.toString().replace(/^https?:\/\/[^/]+/, "");
+  console.log("🌐 Final API URL:", fullUrl);
+  return fullUrl;
 };
 
 // ---------- helpers ----------
