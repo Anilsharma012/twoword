@@ -92,7 +92,27 @@ const ComprehensiveAuth = () => {
 
     try {
       const isLogin = activeTab === "login";
+
+      // Basic client-side validation to prevent avoidable 400s
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!formData.email || !emailRegex.test(formData.email)) {
+        throw new Error("Please enter a valid email address.");
+      }
+      if (!formData.phone || formData.phone.replace(/\D/g, "").length < 10) {
+        throw new Error("Please enter a valid 10-digit phone number.");
+      }
+      if (!formData.password || formData.password.length < 6) {
+        throw new Error("Password must be at least 6 characters.");
+      }
+
       const endpoint = isLogin ? "auth/login" : "auth/register";
+
+      // Guard userType for registration (backend allows only seller|buyer|agent)
+      const allowedTypes = ["seller", "buyer", "agent"] as const;
+      const safeUserType = allowedTypes.includes(formData.userType as any)
+        ? (formData.userType as (typeof allowedTypes)[number])
+        : ("buyer" as const);
+
       const payload = isLogin
         ? {
             email: formData.email || undefined,
@@ -105,7 +125,7 @@ const ComprehensiveAuth = () => {
             email: formData.email,
             phone: formData.phone,
             password: formData.password,
-            userType: formData.userType,
+            userType: safeUserType,
           };
 
       console.log(`Making ${isLogin ? "login" : "registration"} request...`);
@@ -116,14 +136,12 @@ const ComprehensiveAuth = () => {
         const { token, user } = data.data;
 
         if (!isLogin) {
-          // Registration successful
           setSuccess("Registration successful! Welcome to Aashish Property.");
           setTimeout(() => {
             login(token, user);
             redirectToCorrectDashboard(user.userType);
           }, 2000);
         } else {
-          // Login successful
           login(token, user);
           redirectToCorrectDashboard(user.userType);
         }
@@ -140,7 +158,6 @@ const ComprehensiveAuth = () => {
         error,
       );
 
-      // Handle specific error types
       let errorMessage = error.message;
       if (
         error.name === "TypeError" &&
@@ -150,6 +167,11 @@ const ComprehensiveAuth = () => {
           "Network error. Please check your internet connection and try again.";
       } else if (error.message.includes("body stream already read")) {
         errorMessage = "Request processing error. Please try again.";
+      } else if (/^HTTP\s*\d+/.test(errorMessage || "")) {
+        // Provide friendly guidance for 400s from validation
+        errorMessage = isLogin
+          ? "Invalid credentials. Please check your email/phone and password."
+          : "Registration failed. Please ensure Name, Email, Phone, Password, and User Type are valid.";
       } else if (!errorMessage) {
         errorMessage = `${activeTab === "login" ? "Login" : "Registration"} failed. Please try again.`;
       }
