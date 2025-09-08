@@ -80,6 +80,7 @@ import AdsenseProvider from "./components/AdsenseProvider";
 import SubcategoriesPage from "./pages/SubcategoriesPage";
 import CategoryContentPage from "./pages/CategoryContentPage";
 import OneSignalInit from "./components/OneSignalInit";
+import { AdsProvider } from "./ads/AdsProvider";
 
 const queryClient = new QueryClient();
 
