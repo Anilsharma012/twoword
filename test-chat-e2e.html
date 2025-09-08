@@ -96,7 +96,7 @@
 
           // 4) Buyer creates/fetches conversation for the property
           log('Creating/finding conversation as Buyer...');
-          r = await api(`conversations/find-or-create?propertyId=${propertyId}`, { method:'POST', token: buyerToken });
+          r = await api(`conversations/find-or-create`, { method:'POST', token: buyerToken, json: { propertyId } });
           if (!r.ok || !r.data?.success) throw new Error('Conversation create failed: '+(r.data?.error||r.status));
           const conversationId = r.data.data._id; log('Conversation ready: '+conversationId, 'ok');
 
