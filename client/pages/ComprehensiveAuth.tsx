@@ -4,6 +4,8 @@ import { signInWithGoogle, isFirebaseConfigured } from "@/lib/firebase";
 import { useAuth } from "../hooks/useAuth";
 import { api } from "../lib/api";
 import { Button } from "../components/ui/button";
+import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
+import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
 import {
   Card,
@@ -506,6 +508,28 @@ const handleGoogleAuth = async (e?: React.MouseEvent) => {
                       />
                     </div>
                   </div>
+
+                  {activeTab === "register" && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Account Type
+                      </label>
+                      <RadioGroup
+                        value={formData.userType}
+                        onValueChange={(val) => setFormData({ ...formData, userType: val as any })}
+                        className="grid grid-cols-2 gap-3"
+                      >
+                        <div className="flex items-center space-x-2 border rounded-md p-3 hover:bg-gray-50">
+                          <RadioGroupItem id="userType-buyer" value="buyer" />
+                          <Label htmlFor="userType-buyer">Buyer</Label>
+                        </div>
+                        <div className="flex items-center space-x-2 border rounded-md p-3 hover:bg-gray-50">
+                          <RadioGroupItem id="userType-seller" value="seller" />
+                          <Label htmlFor="userType-seller">Seller</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
