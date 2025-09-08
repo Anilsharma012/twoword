@@ -90,8 +90,8 @@ const ComprehensiveAuth = () => {
     setError("");
     setSuccess("");
 
+    const isLogin = activeTab === "login";
     try {
-      const isLogin = activeTab === "login";
 
       // Basic client-side validation to prevent avoidable 400s
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
