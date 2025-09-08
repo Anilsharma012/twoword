@@ -46,6 +46,7 @@ if (isConfigured) {
   );
 }
 export { analytics };
+export const isFirebaseConfigured = isConfigured;
 
 // Initialize Firebase Auth/Firestore conditionally
 export const auth: any = isConfigured ? getAuth(app) : (null as any);
