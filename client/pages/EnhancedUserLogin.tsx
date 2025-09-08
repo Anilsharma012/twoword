@@ -25,7 +25,7 @@ import UnifiedLoginNotice from "../components/UnifiedLoginNotice";
 
 const EnhancedUserLogin = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const [activeTab, setActiveTab] = useState("password");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -43,6 +43,19 @@ const EnhancedUserLogin = () => {
     userType: "seller" as "seller" | "buyer" | "agent",
     otp: "",
   });
+
+  // Redirect already-authenticated users
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const routes: any = {
+        admin: "/admin",
+        seller: "/seller-dashboard",
+        buyer: "/buyer-dashboard",
+        agent: "/agent-dashboard",
+      };
+      navigate(routes[user.userType] || "/");
+    }
+  }, [isAuthenticated]);
 
   // OTP Timer
   useEffect(() => {
