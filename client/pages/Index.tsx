@@ -28,11 +28,9 @@ export default function Index() {
         <OLXStyleCategories />
 
         {/* Ad Slot: Below categories (CLS-safe) */}
-        {import.meta.env.VITE_ADSENSE_CLIENT ? (
-          <div className="px-4 mt-4">
-            <AdSlot format="horizontal" />
-          </div>
-        ) : null}
+        <div className="px-4 mt-4">
+          <AdSlot format="horizontal" slotKey="below_categories" />
+        </div>
 
         {/* Featured Property Ads Slider (moved below categories) */}
         <PropertyAdsSlider />
