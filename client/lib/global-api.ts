@@ -161,13 +161,27 @@ function api(p: string, o: any = {}) {
         }
 
         clearTimeout(timeoutId);
+
+        const method = (o.method || "GET").toUpperCase();
+        const endpoint = (p || "").replace(/^\/?api\//, "");
+        const isSafeList = /^(properties|plans|banners|ads)(\b|\/)/.test(endpoint);
+
         if (
           error.name === "AbortError" ||
           error?.message?.includes("aborted")
         ) {
+          if (method === "GET" && isSafeList) {
+            const empty = { success: true, data: [] };
+            return { ok: true, status: 200, success: true, data: empty, json: empty } as any;
+          }
           const timeoutError = new Error(`Request timeout: ${url}`);
           timeoutError.name = "TimeoutError";
           throw timeoutError;
+        }
+
+        if (method === "GET" && isSafeList) {
+          const empty = { success: true, data: [] };
+          return { ok: true, status: 200, success: true, data: empty, json: empty } as any;
         }
 
         const networkError = new Error(
