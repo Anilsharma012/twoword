@@ -4,6 +4,8 @@ import { useAuth } from "../hooks/useAuth";
 import { ROHTAK_AREAS } from "@shared/types";
 import MenuDashboard from "./MenuDashboard";
 import { useNotificationsUnread } from "../hooks/useNotificationsUnread";
+import { useLocationPreference } from "../hooks/useLocationPreference";
+import LocationModal from "./LocationModal";
 
 export default function OLXStyleHeader() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -11,6 +13,8 @@ export default function OLXStyleHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const unread = useNotificationsUnread();
+
+  const { currentCity, openModal } = useLocationPreference();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,11 +34,6 @@ export default function OLXStyleHeader() {
     area.toLowerCase().includes(searchQuery.toLowerCase()),
   ).slice(0, 5);
 
-  const handleLocationClick = () => {
-    // Location selector logic here
-    console.log("Location selector clicked");
-  };
-
   const handleFavoritesClick = () => {
     window.location.href = "/favorites";
   };
@@ -42,6 +41,8 @@ export default function OLXStyleHeader() {
   const handleMenuClick = () => {
     setIsMenuOpen(!isMenuOpen);
   };
+
+  const placeholderCity = currentCity?.cityName || "your city";
 
   return (
     <header className="bg-[#C70000] border-b border-red-800 sticky top-0 z-40">
@@ -84,7 +85,7 @@ export default function OLXStyleHeader() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search properties in Rohtak..."
+                placeholder={`Search properties in ${placeholderCity}...`}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -92,8 +93,16 @@ export default function OLXStyleHeader() {
                 }}
                 onFocus={() => setShowSuggestions(searchQuery.length > 0)}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                className="w-full pl-10 pr-12 py-3 border-2 border-white border-opacity-30 rounded-lg focus:border-white focus:outline-none text-white placeholder-white placeholder-opacity-70 bg-white bg-opacity-20 backdrop-blur-sm"
+                className="w-full pl-10 pr-20 py-3 border-2 border-white border-opacity-30 rounded-lg focus:border-white focus:outline-none text-white placeholder-white placeholder-opacity-70 bg-white bg-opacity-20 backdrop-blur-sm"
               />
+              <button
+                type="button"
+                onClick={openModal}
+                aria-label="Select location"
+                className="absolute right-10 top-1/2 transform -translate-y-1/2 p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors"
+              >
+                <MapPin className="h-5 w-5 text-white opacity-80" />
+              </button>
               <button
                 type="button"
                 onClick={handleFavoritesClick}
@@ -232,6 +241,8 @@ export default function OLXStyleHeader() {
           </div>
         </div>
       )}
+
+      <LocationModal />
     </header>
   );
 }
