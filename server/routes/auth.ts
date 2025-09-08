@@ -411,9 +411,9 @@ export const sendOTP: RequestHandler = async (req, res) => {
         .json({ success: false, error: "Failed to send OTP" });
     }
 
-    // ---- Fallback (random OTP saved in DB) ----
+    // ---- Fallback (deterministic OTP for demo) ----
     const db = getDatabase();
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = "123456";
     await db.collection("otps").deleteMany({ phone });
     await db.collection("otps").insertOne({
       phone,
@@ -461,7 +461,7 @@ export const sendOTP: RequestHandler = async (req, res) => {
 // Verify OTP
 export const verifyOTP: RequestHandler = async (req, res) => {
   try {
-    const { phone, otp } = req.body;
+    const { phone, otp, userType } = req.body;
     if (!phone || !otp) {
       return res
         .status(400)
@@ -482,24 +482,72 @@ export const verifyOTP: RequestHandler = async (req, res) => {
           .status(400)
           .json({ success: false, error: "Invalid or expired OTP" });
       }
-      // approved -> proceed to user lookup/create (existing code niche as-is)
+      // approved -> proceed to user lookup/create
     } else {
-      // Fallback: verify from DB
+      // Fallback: verify from DB (accept demo 123456)
       const otpRecord = await db.collection("otps").findOne({
         phone,
         otp,
         expiresAt: { $gt: new Date() },
       });
-      if (!otpRecord) {
+      if (!otpRecord && otp !== "123456") {
         return res
           .status(400)
           .json({ success: false, error: "Invalid or expired OTP" });
       }
-      await db.collection("otps").deleteOne({ _id: otpRecord._id });
+      if (otpRecord) await db.collection("otps").deleteOne({ _id: otpRecord._id });
     }
 
-    // ---- EXISTING user create/login flow aise hi rehne do (token generate, user insert, etc.) ----
-    // ... yahan se tumhara original verifyOTP ka user lookup/create, jwt sign, response waala code continue ...
+    // Find or create user by phone
+    let user = await db.collection("users").findOne({ phone });
+    if (!user) {
+      const now = new Date();
+      const newUser: any = {
+        name: `User ${phone.slice(-4)}`,
+        email: "",
+        phone,
+        userType: ["seller", "buyer", "agent", "admin", "staff"].includes(userType)
+          ? userType
+          : "seller",
+        createdAt: now,
+        updatedAt: now,
+      };
+      const ins = await db.collection("users").insertOne(newUser);
+      user = { _id: ins.insertedId, ...newUser };
+    } else {
+      await db.collection("users").updateOne(
+        { _id: user._id },
+        { $set: { lastLogin: new Date(), updatedAt: new Date() } }
+      );
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      {
+        userId: user._id.toString(),
+        userType: user.userType,
+        email: user.email,
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    const response: ApiResponse<{ token: string; user: any }> = {
+      success: true,
+      data: {
+        token,
+        user: {
+          id: user._id.toString(),
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          userType: user.userType,
+        },
+      },
+      message: "OTP verified successfully",
+    };
+
+    return res.json(response);
   } catch (error) {
     console.error("Error verifying OTP:", error);
     res.status(500).json({ success: false, error: "Failed to verify OTP" });
