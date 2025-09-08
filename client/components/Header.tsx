@@ -241,6 +241,7 @@ export default function Header() {
           </button>
         </div>
       </div>
+      <LocationModal />
     </header>
   );
 }
