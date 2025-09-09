@@ -37,7 +37,7 @@ import UnifiedLoginNotice from "../components/UnifiedLoginNotice";
 
 const ComprehensiveAuth = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const [activeTab, setActiveTab] = useState("login");
   const [authMode, setAuthMode] = useState<"password" | "otp" | "google">(
     "password",
@@ -48,6 +48,18 @@ const ComprehensiveAuth = () => {
   const [success, setSuccess] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const routes: any = {
+        admin: "/admin",
+        seller: "/seller-dashboard",
+        buyer: "/buyer-dashboard",
+        agent: "/agent-dashboard",
+      };
+      navigate(routes[user.userType] || "/");
+    }
+  }, [isAuthenticated]);
 
   const [formData, setFormData] = useState({
     name: "",

@@ -6,7 +6,7 @@ import {
   ReactNode,
 } from "react";
 import { User as FirebaseUser } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, getDocFromCache } from "firebase/firestore";
 import { auth, db, onAuthStateChange, signOutUser } from "../lib/firebase";
 
 interface User {
@@ -79,26 +79,59 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       setFirebaseUser(firebaseUser);
 
       if (firebaseUser) {
-        // User is signed in with Firebase
         try {
-          // Get Firebase ID token
           const idToken = await firebaseUser.getIdToken();
+          const userRef = doc(db, "users", firebaseUser.uid);
 
-          // Check if we have user data in Firestore
-          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+          let userData: User | null = null;
 
-          if (userDoc.exists()) {
-            // User exists in Firestore, use that data
-            const userData = userDoc.data() as User;
+          // Try network first when online, else skip to cache
+          if (navigator.onLine) {
+            try {
+              const snap = await getDoc(userRef);
+              if (snap.exists()) {
+                userData = snap.data() as User;
+              }
+            } catch (e: any) {
+              // Fall through to cache/localStorage
+              if (e?.code !== "unavailable") {
+                console.warn("Firestore getDoc failed:", e?.message || e);
+              }
+            }
+          }
+
+          // If still no data, try Firestore cache
+          if (!userData) {
+            try {
+              const cached = await getDocFromCache(userRef);
+              if (cached.exists()) {
+                userData = cached.data() as User;
+              }
+            } catch (cacheErr: any) {
+              // Cache might be cold or persistence disabled; ignore
+            }
+          }
+
+          // Final fallback: localStorage
+          if (!userData) {
+            const lsUser = localStorage.getItem("user");
+            if (lsUser) {
+              try {
+                const parsed = JSON.parse(lsUser) as User;
+                if (parsed && parsed.id) {
+                  userData = parsed;
+                }
+              } catch {}
+            }
+          }
+
+          if (userData) {
             setUser(userData);
             setToken(idToken);
-
-            // Update localStorage
             localStorage.setItem("token", idToken);
             localStorage.setItem("user", JSON.stringify(userData));
           } else {
-            // New Firebase user, we'll handle this in loginWithFirebase
-            console.log("New Firebase user, waiting for profile completion");
+            console.log("No user profile found (new user or offline without cache)");
           }
         } catch (error) {
           console.error("Error handling Firebase auth state:", error);
@@ -134,6 +167,10 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       // Get Firebase ID token
       const idToken = await firebaseUser.getIdToken();
 
+      if (!navigator.onLine) {
+        throw new Error("You're offline. Please connect to the internet to sign in.");
+      }
+
       // Check if user exists in Firestore
       const userDocRef = doc(db, "users", firebaseUser.uid);
       const userDoc = await getDoc(userDocRef);
@@ -141,11 +178,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       let userData: User;
 
       if (userDoc.exists()) {
-        // Existing user
         userData = userDoc.data() as User;
         console.log("Existing Firebase user found");
       } else {
-        // New user - create profile
         userData = {
           id: firebaseUser.uid,
           firebaseUid: firebaseUser.uid,
@@ -200,11 +235,18 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const updatedUser = { ...user, ...updates };
 
-      // Update Firestore
+      // Update Firestore (requires online)
+      if (!navigator.onLine) {
+        // Update local state only; sync later when online via next login
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        console.warn("Offline: queued local profile update; will sync when online.");
+        return;
+      }
+
       const userDocRef = doc(db, "users", firebaseUser.uid);
       await setDoc(userDocRef, updatedUser, { merge: true });
 
-      // Update local state
       setUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
 

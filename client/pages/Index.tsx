@@ -24,18 +24,16 @@ export default function Index() {
         {/* Hero Image Slider */}
         <HeroImageSlider />
 
-        {/* Ad Slot: Below hero (CLS-safe) */}
-        {import.meta.env.VITE_ADSENSE_CLIENT ? (
-          <div className="px-4 mt-4">
-            <AdSlot format="horizontal" />
-          </div>
-        ) : null}
-
-        {/* Property Ads Slider */}
-        <PropertyAdsSlider />
-
-        {/* Dynamic Categories */}
+        {/* Dynamic Categories (moved up as requested) */}
         <OLXStyleCategories />
+
+        {/* Ad Slot: Below categories (CLS-safe) */}
+        <div className="px-4 mt-4">
+          <AdSlot format="horizontal" slotKey="below_categories" />
+        </div>
+
+        {/* Featured Property Ads Slider (moved below categories) */}
+        <PropertyAdsSlider />
 
         {/* Mid-size banner below categories */}
         <div className="px-4 mb-6 bg-white py-6">

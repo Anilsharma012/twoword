@@ -66,6 +66,7 @@ import NewProjects from "./pages/NewProjects";
 import RecentViews from "./pages/RecentViews";
 import Leads from "./pages/Leads";
 import Notifications from "./pages/Notifications";
+import SellerBlog from "./pages/SellerBlog";
 import NotFound from "./pages/NotFound";
 import FooterTest from "./pages/FooterTest";
 import FooterDebugPage from "./pages/FooterDebugPage";
@@ -76,6 +77,7 @@ import TestChat from "./pages/TestChat";
 import Step3Test from "./pages/Step3Test";
 import NetworkStatus from "./components/NetworkStatus";
 import AdsenseProvider from "./components/AdsenseProvider";
+import TitleSync from "./components/TitleSync";
 
 const queryClient = new QueryClient();
 
@@ -89,8 +91,9 @@ function App() {
               <Toaster />
               <Sonner />
               <NetworkStatus />
-              {import.meta.env.VITE_ADSENSE_CLIENT ? <AdsenseProvider /> : null}
+              <AdsenseProvider />
               <BrowserRouter>
+                <TitleSync />
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/categories" element={<Categories />} />
@@ -144,7 +147,7 @@ function App() {
                   <Route path="/step3-test" element={<Step3Test />} />
                   <Route path="/my-account" element={<MyAccount />} />
                   <Route path="/agents" element={<Agents />} />
-                  {/* <Route path="/login" element={<Login />} /> */}
+                  <Route path="/login" element={<EnhancedUserLogin />} />
                   <Route path="/user-login" element={<EnhancedUserLogin />} />
                   <Route path="/auth" element={<ComprehensiveAuth />} />
                   <Route path="/firebase-auth" element={<FirebaseAuth />} />
@@ -171,11 +174,18 @@ function App() {
                   />
                   <Route path="/buyer-dashboard" element={<BuyerDashboard />} />
                   <Route path="/agent-dashboard" element={<AgentDashboard />} />
+                  <Route path="/seller/blog" element={<SellerBlog />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/admin/support" element={<Admin />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
-                  <Route path="/admin/ads/categories" element={<CategoriesPage />} />
-                  <Route path="/admin/locations/countries" element={<CountriesPage />} />
+                  <Route
+                    path="/admin/ads/categories"
+                    element={<CategoriesPage />}
+                  />
+                  <Route
+                    path="/admin/locations/countries"
+                    element={<CountriesPage />}
+                  />
                   <Route path="/staff/login" element={<StaffLogin />} />
                   <Route path="/staff-dashboard" element={<StaffDashboard />} />
                   <Route path="/staff-admin" element={<StaffAdmin />} />

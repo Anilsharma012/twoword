@@ -171,6 +171,14 @@ export default function StaticFooter() {
                   Other Services
                 </Link>
               </li>
+              <li>
+                <Link
+                  to="/blog"
+                  className="text-red-200 hover:text-white transition-colors duration-200 text-sm"
+                >
+                  Blog
+                </Link>
+              </li>
             </ul>
           </div>
 

@@ -265,6 +265,11 @@ export default function MenuDashboard({ onClose }: MenuDashboardProps) {
           label: "My Properties",
           path: "/my-properties",
         },
+        {
+          icon: <Edit className="h-4 w-4" />,
+          label: "Blog",
+          path: "/seller/blog",
+        },
       ],
       agent: [
         {

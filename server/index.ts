@@ -286,6 +286,10 @@ import {
   createBlogPost,
   updateBlogPost,
   deleteBlogPost,
+  getSellerBlogPosts,
+  createSellerBlogPost,
+  updateSellerBlogPost,
+  deleteSellerBlogPost,
 } from "./routes/blog";
 
 // Reports routes
@@ -948,6 +952,69 @@ export function createServer() {
     requireAdmin,
     updatePhonePeConfig,
   );
+
+  // AdSense config routes
+  app.get("/api/adsense/config", async (req, res) => {
+    try {
+      const db = getDatabase();
+      const settings = await db.collection("admin_settings").findOne({});
+      const adsense = settings?.adsense ?? {
+        enabled: false,
+        clientId: "",
+        slots: {},
+        disabledRoutes: [],
+        testMode: true,
+      };
+      res.json({ success: true, data: adsense });
+    } catch (e) {
+      res
+        .status(500)
+        .json({ success: false, error: "Failed to fetch AdSense config" });
+    }
+  });
+  app.put(
+    "/api/admin/settings/adsense",
+    authenticateToken,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const db = getDatabase();
+        const {
+          enabled,
+          clientId,
+          slots = {},
+          disabledRoutes = [],
+          testMode = false,
+        } = req.body || {};
+        await db
+          .collection("admin_settings")
+          .updateOne(
+            {},
+            {
+              $set: {
+                adsense: {
+                  enabled: !!enabled,
+                  clientId: clientId || "",
+                  slots,
+                  disabledRoutes,
+                  testMode: !!testMode,
+                },
+                updatedAt: new Date(),
+              },
+            },
+            { upsert: true },
+          );
+        res.json({
+          success: true,
+          data: { message: "AdSense settings updated" },
+        });
+      } catch (e) {
+        res
+          .status(500)
+          .json({ success: false, error: "Failed to update AdSense config" });
+      }
+    },
+  );
   app.get(
     "/api/admin/user-stats",
     authenticateToken,
@@ -1446,6 +1513,32 @@ export function createServer() {
   // Blog routes
   app.get("/api/blog", getPublicBlogPosts);
   app.get("/api/blog/:slug", getBlogPostBySlug);
+  // Seller blog
+  app.get(
+    "/api/seller/blog",
+    authenticateToken,
+    requireSellerOrAgent,
+    getSellerBlogPosts,
+  );
+  app.post(
+    "/api/seller/blog",
+    authenticateToken,
+    requireSellerOrAgent,
+    createSellerBlogPost,
+  );
+  app.put(
+    "/api/seller/blog/:postId",
+    authenticateToken,
+    requireSellerOrAgent,
+    updateSellerBlogPost,
+  );
+  app.delete(
+    "/api/seller/blog/:postId",
+    authenticateToken,
+    requireSellerOrAgent,
+    deleteSellerBlogPost,
+  );
+  // Admin blog
   app.get("/api/admin/blog", authenticateToken, requireAdmin, getAllBlogPosts);
   app.post("/api/admin/blog", authenticateToken, requireAdmin, createBlogPost);
   app.put(
@@ -2150,22 +2243,18 @@ export function createServer() {
       if (!res.headersSent) {
         if (err && err.name === "MulterError") {
           // Multer-specific errors (e.g., file too large)
-          return res
-            .status(400)
-            .json({
-              success: false,
-              error: err.message || "File upload error",
-            });
+          return res.status(400).json({
+            success: false,
+            error: err.message || "File upload error",
+          });
         }
 
         // Custom invalid file type error
         if (err && err.code === "INVALID_FILE_TYPE") {
-          return res
-            .status(400)
-            .json({
-              success: false,
-              error: err.message || "Invalid file type",
-            });
+          return res.status(400).json({
+            success: false,
+            error: err.message || "Invalid file type",
+          });
         }
 
         // CORS errors and others
@@ -2173,12 +2262,10 @@ export function createServer() {
           return res.status(403).json({ success: false, error: err.message });
         }
 
-        return res
-          .status(500)
-          .json({
-            success: false,
-            error: err && err.message ? err.message : "Internal server error",
-          });
+        return res.status(500).json({
+          success: false,
+          error: err && err.message ? err.message : "Internal server error",
+        });
       }
       next(err);
     });
@@ -2191,12 +2278,10 @@ export function createServer() {
         err && err.message ? err.message : err,
       );
       if (!res.headersSent) {
-        return res
-          .status(500)
-          .json({
-            success: false,
-            error: err && err.message ? err.message : "Internal server error",
-          });
+        return res.status(500).json({
+          success: false,
+          error: err && err.message ? err.message : "Internal server error",
+        });
       }
       next(err);
     });

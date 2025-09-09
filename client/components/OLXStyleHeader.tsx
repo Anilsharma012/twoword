@@ -1,5 +1,14 @@
-import React, { useState } from "react";
-import { Search, Heart, Menu, Bell, User, LogOut } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import {
+  Search,
+  Heart,
+  Menu,
+  Bell,
+  User,
+  LogOut,
+  MapPin,
+  Clock,
+} from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { ROHTAK_AREAS } from "@shared/types";
 import MenuDashboard from "./MenuDashboard";
@@ -8,14 +17,47 @@ import { useNotificationsUnread } from "../hooks/useNotificationsUnread";
 export default function OLXStyleHeader() {
   const { user, isAuthenticated, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeIndex, setActiveIndex] = useState<number>(-1);
+  const [recent, setRecent] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("recent_searches") || "[]");
+    } catch {
+      return [];
+    }
+  });
   const unread = useNotificationsUnread();
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 250);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  const normalizeSector = (q: string) => {
+    const m = q.toLowerCase().match(/^(sec|sector)\s*-?\s*(\d+[a-zA-Z]?)$/);
+    if (m) return `Sector-${m[2]}`;
+    return q;
+  };
+
+  const pickSuggestion = (text: string) => {
+    const city = "Rohtak";
+    const sector = normalizeSector(text);
+    try {
+      const payload = { city, sector, lat: null, lng: null };
+      sessionStorage.setItem("selected_location", JSON.stringify(payload));
+      const next = [text, ...recent.filter((r) => r !== text)].slice(0, 5);
+      setRecent(next);
+      localStorage.setItem("recent_searches", JSON.stringify(next));
+    } catch {}
+    window.location.href = `/properties?search=${encodeURIComponent(`${sector}, ${city}`)}`;
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/properties?search=${encodeURIComponent(searchQuery)}`;
+      pickSuggestion(searchQuery.trim());
     }
     setShowSuggestions(false);
   };
@@ -27,8 +69,11 @@ export default function OLXStyleHeader() {
   };
 
   const filteredAreas = ROHTAK_AREAS.filter((area) =>
-    area.toLowerCase().includes(searchQuery.toLowerCase()),
-  ).slice(0, 5);
+    area.toLowerCase().includes(debouncedQuery.toLowerCase()),
+  );
+  const suggestions = (
+    debouncedQuery ? filteredAreas : [...recent, ...ROHTAK_AREAS.slice(0, 5)]
+  ).slice(0, 20);
 
   const handleLocationClick = () => {
     // Location selector logic here
@@ -58,7 +103,7 @@ export default function OLXStyleHeader() {
           {/* Logo */}
           <div className="flex items-center space-x-2">
             <div className="text-2xl font-bold text-white">
-              ASHISH PROPERTIES
+              Aashish Properties
             </div>
           </div>
 
@@ -79,7 +124,26 @@ export default function OLXStyleHeader() {
 
         {/* Search Bar */}
         <div className="mt-3 relative">
-          <form onSubmit={handleSearch} className="relative">
+          <form
+            onSubmit={handleSearch}
+            className="relative"
+            onKeyDown={(e) => {
+              if (!showSuggestions || suggestions.length === 0) return;
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
+              }
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setActiveIndex((i) => Math.max(i - 1, 0));
+              }
+              if (e.key === "Enter" && activeIndex >= 0) {
+                e.preventDefault();
+                pickSuggestion(suggestions[activeIndex]);
+                setShowSuggestions(false);
+              }
+            }}
+          >
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
@@ -88,10 +152,11 @@ export default function OLXStyleHeader() {
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  setShowSuggestions(e.target.value.length > 0);
+                  setActiveIndex(-1);
+                  setShowSuggestions(true);
                 }}
-                onFocus={() => setShowSuggestions(searchQuery.length > 0)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
                 className="w-full pl-10 pr-12 py-3 border-2 border-white border-opacity-30 rounded-lg focus:border-white focus:outline-none text-white placeholder-white placeholder-opacity-70 bg-white bg-opacity-20 backdrop-blur-sm"
               />
               <button
@@ -104,64 +169,49 @@ export default function OLXStyleHeader() {
             </div>
 
             {/* Search Suggestions */}
-            {showSuggestions &&
-              (searchQuery.length > 0 || filteredAreas.length > 0) && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border z-50 max-h-60 overflow-y-auto">
-                  {searchQuery.length > 0 && (
-                    <div className="p-2 border-b border-gray-100">
-                      <div className="text-xs text-gray-500 mb-2 px-2">
-                        Search for:
-                      </div>
+            {showSuggestions && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border z-50 max-h-64 overflow-y-auto w-full">
+                {!debouncedQuery && recent.length > 0 && (
+                  <div className="p-2 border-b border-gray-100">
+                    <div className="text-xs text-gray-500 mb-2 px-2 flex items-center space-x-1">
+                      <Clock className="h-3 w-3" />
+                      <span>Recent</span>
+                    </div>
+                    {recent.map((r) => (
                       <button
+                        key={`recent-${r}`}
                         type="button"
-                        onClick={() => handleSuggestionClick(searchQuery)}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded flex items-center space-x-2"
+                        onClick={() => pickSuggestion(r)}
+                        className="w-full text-left px-3 py-3 hover:bg-gray-50 rounded flex items-center space-x-2 min-h-11 whitespace-normal break-words"
                       >
-                        <Search className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-900">"{searchQuery}"</span>
+                        <MapPin className="h-4 w-4 text-[#C70000]" />
+                        <span className="text-gray-900">{r}</span>
                       </button>
-                    </div>
-                  )}
+                    ))}
+                  </div>
+                )}
 
-                  {filteredAreas.length > 0 && (
-                    <div className="p-2">
-                      <div className="text-xs text-gray-500 mb-2 px-2">
-                        Rohtak Areas:
-                      </div>
-                      {filteredAreas.map((area) => (
-                        <button
-                          key={area}
-                          type="button"
-                          onClick={() => handleSuggestionClick(area)}
-                          className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded flex items-center space-x-2"
-                        >
-                          <MapPin className="h-4 w-4 text-[#C70000]" />
-                          <span className="text-gray-900">{area}</span>
-                        </button>
-                      ))}
+                <div className="p-2">
+                  {!debouncedQuery && (
+                    <div className="text-xs text-gray-500 mb-2 px-2">
+                      Popular nearby
                     </div>
                   )}
-
-                  {searchQuery.length === 0 && (
-                    <div className="p-2">
-                      <div className="text-xs text-gray-500 mb-2 px-2">
-                        Popular Areas:
-                      </div>
-                      {ROHTAK_AREAS.slice(0, 5).map((area) => (
-                        <button
-                          key={area}
-                          type="button"
-                          onClick={() => handleSuggestionClick(area)}
-                          className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded flex items-center space-x-2"
-                        >
-                          <MapPin className="h-4 w-4 text-[#C70000]" />
-                          <span className="text-gray-900">{area}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  {suggestions.map((area, idx) => (
+                    <button
+                      key={`sugg-${area}-${idx}`}
+                      type="button"
+                      onMouseEnter={() => setActiveIndex(idx)}
+                      onClick={() => pickSuggestion(area)}
+                      className={`w-full text-left px-3 py-3 rounded flex items-center space-x-2 min-h-11 whitespace-normal break-words ${activeIndex === idx ? "bg-gray-100" : "hover:bg-gray-50"}`}
+                    >
+                      <MapPin className="h-4 w-4 text-[#C70000]" />
+                      <span className="text-gray-900">{area}</span>
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
           </form>
         </div>
       </div>

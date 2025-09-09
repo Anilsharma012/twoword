@@ -21,8 +21,16 @@ export const useUnreadCount = () => {
           setUnreadCount(res.data.data.totalUnread || 0);
         }
       } catch (error: any) {
-        // Log concise error for diagnostics
-        console.error("Error fetching unread count:", error?.message || error);
+        const msg = String(error?.message || error || "");
+        if (msg.includes("Invalid or expired token") || msg.includes("HTTP 403")) {
+          try {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+          } catch {}
+          setUnreadCount(0);
+          return;
+        }
+        console.error("Error fetching unread count:", msg);
       }
     };
 

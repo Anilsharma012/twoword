@@ -216,7 +216,7 @@ export default function Categories() {
 
           {/* Subcategories List */}
           <div className="space-y-2">
-            {selectedCategory.subcategories.map((subcategory) => (
+            {(selectedCategory.subcategories || []).map((subcategory) => (
               <button
                 key={subcategory.id}
                 onClick={() => handleSubcategoryClick(subcategory)}
@@ -286,7 +286,7 @@ export default function Categories() {
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                  {category.subcategories.length} types
+                  {(category.subcategories?.length ?? 0)} types
                 </span>
                 <ChevronRight className="h-5 w-5 text-gray-400" />
               </div>

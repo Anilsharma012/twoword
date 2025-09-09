@@ -529,7 +529,7 @@ export default function EnhancedSellerDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="notifications" className="relative">
               Notifications
@@ -551,6 +551,7 @@ export default function EnhancedSellerDashboard() {
             <TabsTrigger value="insights">Insights</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="blog">Blog</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -624,9 +625,14 @@ export default function EnhancedSellerDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {properties.slice(0, 3).map((property) => (
+                    {properties.slice(0, 3).map((property, idx) => (
                       <div
-                        key={property._id}
+                        key={
+                          (property as any)._id ||
+                          (property as any).id ||
+                          property.title ||
+                          idx
+                        }
                         className="border border-gray-200 rounded-lg p-4"
                       >
                         <div className="flex items-start justify-between">
@@ -692,9 +698,11 @@ export default function EnhancedSellerDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {notifications.map((notification) => (
+                    {notifications.map((notification, idx) => (
                       <div
-                        key={notification._id}
+                        key={
+                          (notification as any)._id || notification.title || idx
+                        }
                         className={`border rounded-lg p-4 ${
                           notification.isRead
                             ? "bg-gray-50"
@@ -792,8 +800,15 @@ export default function EnhancedSellerDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {properties.map((property) => (
-                        <TableRow key={property._id}>
+                      {properties.map((property, idx) => (
+                        <TableRow
+                          key={
+                            (property as any)._id ||
+                            (property as any).id ||
+                            property.title ||
+                            idx
+                          }
+                        >
                           <TableCell>
                             <div>
                               <div className="font-medium">
@@ -882,9 +897,9 @@ export default function EnhancedSellerDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {messages.map((message) => (
+                    {messages.map((message, idx) => (
                       <div
-                        key={message._id}
+                        key={(message as any)._id || message.timestamp || idx}
                         className={`border rounded-lg p-4 ${
                           message.isRead
                             ? "bg-gray-50"
@@ -1005,6 +1020,27 @@ export default function EnhancedSellerDashboard() {
             </div>
           </TabsContent>
 
+          {/* Blog Tab */}
+          <TabsContent value="blog" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Blog</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-3">
+                  <Link to="/seller/blog">
+                    <Button className="bg-[#C70000] hover:bg-[#A60000] text-white">
+                      Create Blog Post
+                    </Button>
+                  </Link>
+                  <Link to="/seller/blog">
+                    <Button variant="outline">My Posts</Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Payments Tab */}
           <TabsContent value="payments" className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1018,8 +1054,11 @@ export default function EnhancedSellerDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {packages.map((pkg) => (
-                      <div key={pkg._id} className="border rounded-lg p-4">
+                    {packages.map((pkg, idx) => (
+                      <div
+                        key={(pkg as any)._id || pkg.name || idx}
+                        className="border rounded-lg p-4"
+                      >
                         <div className="flex items-center justify-between mb-3">
                           <h3 className="font-bold text-lg">{pkg.name}</h3>
                           <Badge
@@ -1043,7 +1082,7 @@ export default function EnhancedSellerDashboard() {
                         <div className="space-y-1 mb-4">
                           {pkg.features.map((feature, index) => (
                             <div
-                              key={index}
+                              key={`${pkg._id}-${feature}-${index}`}
                               className="flex items-center space-x-2"
                             >
                               <CheckCircle className="h-3 w-3 text-green-500" />
@@ -1076,9 +1115,11 @@ export default function EnhancedSellerDashboard() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {payments.map((payment) => (
+                      {payments.map((payment, idx) => (
                         <div
-                          key={payment._id}
+                          key={
+                            (payment as any)._id || payment.transactionId || idx
+                          }
                           className="border rounded-lg p-3"
                         >
                           <div className="flex items-center justify-between">
